@@ -1,0 +1,145 @@
+---
+title: "Assignment1"
+author: "Sangamesh"
+date: "3 September 2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Q.1
+
+
+Calculating the Sample mean and draw it's histogram:
+```{r x ,echo=FALSE}
+inv_cdf <- function(u){k <- (1/u)^(1/3)}
+u <- runif(1000, min=0, max=1)
+x <- inv_cdf(u)
+#x
+```
+
+```{r SampleMeanX,echo=FALSE}
+hist(x)
+SampleMeanX <- mean(x)
+```
+Sample mean of X is:
+```{r,echo=FALSE}
+print(SampleMeanX)
+```
+Calculating Expected value of the distribution:
+```{r expectedX,echo=FALSE}
+f1 <- function(x)(3/x^3)
+expectedX = integrate(f1, 1, Inf)
+```
+Expected value of X is:
+```{r,echo=FALSE}
+print(expectedX)
+```
+Difference between sample mean and expected value of X is:
+```{r,echo=FALSE}
+Difference <- SampleMeanX - 1.5
+print(Difference)
+```
+Inference : The difference between the sample mean and expected value is nearly 0.
+
+## Q.2
+
+
+```{r,echo=FALSE}
+xv <- (1:100)
+fv <- ((pi^(xv/2))/ gamma((xv/2)+1))*1^xv
+#print(fv)
+plot(xv,fv,type='h')
+```
+Observation: if the limit as d goes to infinity, the volume of the ball goes to zero.
+
+## Q.3 
+
+
+```{r,echo=FALSE}
+xsa <- (1:50)
+fsa <- (2*(pi ^(xsa/2))/ gamma(xsa/2))
+#print(fsa)
+plot(xsa,fsa,type='h')
+```
+Observation: if the limit as d goes to infinity, the surface area of the ball goes to zero.
+
+## Q.4
+
+```{r,echo=FALSE}
+r <- (1:10)
+d <- (1:10)
+f1 <- function(r,d)((pi^(d/2))/ gamma((d/2)+1))*r^d
+z <- outer(r,d,f1)
+persp(r,d,z,theta=30, phi=30, expand = 0.5, col="lightblue")
+```
+Observation: if the limit as d and r goes to infinity, the volume of the ball goes to zero.
+
+## Q.5 
+
+```{r,echo=FALSE}
+rsa <- (1:10)
+dsa <- (1:10)
+fsa <- function(rsa, dsa){(2*(pi ^(dsa/2))/ gamma(dsa/2))*(rsa^dsa)}
+zsa <- outer(rsa,dsa,fsa)
+persp(rsa,dsa,zsa,theta=30, phi=30, expand = 0.5, col="lightblue")
+```
+Observation: if the limit as d and r goes to infinity, the surface area of the ball goes to zero.
+
+
+## Q.6
+
+```{r sphere, echo = FALSE}
+library(hitandrun)
+
+sample <- hypersphere.sample(900, 20)
+fin_sample <- 30*sample
+```
+
+```{r distance, echo = FALSE}
+d <- dist(fin_sample,method = "euclidean")
+```
+
+```{r function, echo = FALSE}
+scaling <- function(d,ndim){
+  fit <- cmdscale(d, eig = FALSE, k = ndim)
+  d_new <- dist(fit)
+  diff <- (((k^0.5)*d) - d_new)
+  print(paste("Subspace of dimension:",k))
+  print(max(diff))
+}
+```
+
+The differences in euclidean distances for the subspace projection is as follows:
+```{r 1dim,echo = FALSE}
+k = 1
+scaling(d,k)
+```
+
+```{r 2dim,echo = FALSE}
+k = 2
+scaling(d,k)
+```
+
+```{r 3dim,echo = FALSE}
+k = 3
+scaling(d,k)
+```
+
+```{r 4dim,echo = FALSE}
+k = 4
+scaling(d,k)
+```
+
+```{r 5dim,echo = FALSE}
+k = 5
+scaling(d,k)
+```
+
+```{r 10dim,echo = FALSE}
+k = 10
+scaling(d,k)
+```
+Observation : As we decrease the dimension, the differences in euclidean distances for the subspace projection decreases.
