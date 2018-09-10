@@ -2,8 +2,10 @@
 title: "Assignment1"
 author: "Sangamesh"
 date: "3 September 2018"
-output: pdf_document
+output:
+  pdf_document: default
 ---
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -75,7 +77,7 @@ f1 <- function(r,d)((pi^(d/2))/ gamma((d/2)+1))*r^d
 z <- outer(r,d,f1)
 persp(r,d,z,theta=30, phi=30, expand = 0.5, col="lightblue")
 ```
-Observation: if the limit as d and r goes to infinity, the volume of the ball goes to zero.
+Observation: if the limit as d and r goes to z, the volume of the ball goes to zero.
 
 ## Q.5 
 
@@ -142,4 +144,11 @@ scaling(d,k)
 k = 10
 scaling(d,k)
 ```
+
 Observation : As we decrease the dimension, the differences in euclidean distances for the subspace projection decreases.
+
+
+[Attached FIle for code](https://drive.google.com/file/d/1yB7lo8myCUKfkqiwbj0dqArPmtGiqCwt/view?usp=sharing)
+
+
+
