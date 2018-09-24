@@ -1,0 +1,165 @@
+---
+title: "Assignment3"
+author: "Sangamesh"
+date: "21/09/2018"
+output:
+  pdf_document: default
+  word_document: default
+  html_document:
+    df_print: paged
+---
+
+
+
+Perform the CRISP-DM analysis as per instructions (Data Preprocessing, Exploratory Data Analysis,and if required, Dimension-Reduction Methods)
+
+## CRISP-DM: The six Phases
+
+Cross-Industry standard process for Data Mining.
+
+1.  Business Understanding
+2.  Data Understanding
+3.  Data Prepration
+4.  Modeling Phase
+5.  Evaluation Phase
+6.  Deployment Phase
+
+The objective of this assignment is to perform first two phases of CRISP-DM.
+
+## Exercise 1
+
+
+## Business Understanding
+
+* Data Mining Goal: For banks, Whenever an applicant applies for a loan, predicting whether the loan will be repaid is an important activity for any bank. High accuracy is beneficial for both the banks and the loan applicants.
+        Our goal here is to extarct various parameters which can most accurately determine if an applicant would repay the loan or not.
+
+* Data Mining Success Criteria: The sucess of data mining solely depends on the fact that whether we are able to identify feature which can accuratily predict an applicant defaulter or not.
+
+
+## Data Understanding
+
+* Data Exploration Report :
+  Following is just the Header Part of the previous bank record data.
+
+```{r data_loding, echo=FALSE,message=FALSE}
+library(readr)
+bankDetails <- read_table2("bankDetails.csv")
+head(bankDetails)
+```
+\vspace{12pt}
+===================================================================
+
+\newpage
+
+Size of Data is:  
+```{r, echo = FALSE}
+  nrow(bankDetails)
+```
+
+
+We are dividing the data into two halves Traning and Test sets.
+```{r,message=FALSE}
+bankDetailsTrain <- bankDetails[1:700,1:9]
+bankDetailsTest <- bankDetails[701:850,1:9]
+```
+
+Summery of the Traning data:
+```{r, echo= FALSE}
+summary(bankDetails)
+```
+
+\vspace{12pt}
+
+* Methods of identifing outliers:
+
+  1.  Boxplot: Box plots are non-parametric: they display variation in samples of a statistical population without making any assumptions of the underlying statistical distribution. The spacings between the different parts of the box indicate the degree of dispersion (spread) and skewness in the data, and show outliers.
+  
+  \vspace{12pt}
+Boxplot of age: Age in years of the loan applicant
+```{r, fig.width=4, fig.height=4}
+boxplot(bankDetails$age)
+```
+
+As the plot shows that the range of people who have taken loan are in the range of 20 to 55. Mean is also around 35. Age factore doesn't shows any outlier in data.
+ 
+  \vspace{12pt}
+Boxplot of ed: Level of education of a loan application
+```{r, fig.width=4, fig.height=4}
+boxplot(bankDetails$ed)
+```
+
+Here We can observe that major population is not so educated about Loan. There are only 54 out of 850 people with higher level of understanding of Loan.
+
+\vspace{12pt}
+
+Boxplot of employ: Years with current employer
+
+```{r, fig.width=4, fig.height=4}
+boxplot(bankDetails$employ)
+```
+
+Only 3 distinct people are employed with the same employer for more the 30 years and 10 are employed for more them 25 years. Major population has an employment history of around 8-10 years.
+
+
+
+\vspace{12pt}
+
+Boxplot of address: Years at current address
+
+```{r, fig.width=4, fig.height=4}
+boxplot(bankDetails$address)
+```
+
+Major population is residing at there current address for 10-15 years. There are only 3 people who have lived at there current address for more then 30 year. only 15 records show someone residing at the current address for more then 25 years.
+
+\vspace{12pt}
+
+
+ Boxplot of income: Household income in thousands
+
+```{r, fig.width=4, fig.height=4}
+boxplot(bankDetails$income)
+```
+
+The point summary shows that the third point is at 55, which means that max should have been around 100 for the distribution to be uniform but Data shows that there are 58 recordes which shows income greater then 100. These point are the outliers.
+
+\vspace{12pt}
+
+
+ Boxplot of debtinc: Debt to income ratio in thousands
+
+```{r, fig.width=4, fig.height=4}
+boxplot(bankDetails$debtinc)
+```
+
+We have 32 people who are having debt to income ratio greater then 25. It's not a surprise that most of these people are dafaulters.
+
+
+
+\vspace{12pt}
+
+
+ Boxplot of creddebt: Credit card debt in thousands
+
+```{r, fig.width=4, fig.height=4}
+boxplot(bankDetails$creddebt)
+```
+
+There is a discrete number of population having dept greater then 4 or 5, The number is just 76. Those having Credit card debt greater then 10 are all defaulters and they are significantly less in number.
+
+
+\vspace{12pt}
+
+
+ Boxplot of othdebt :Other debt in thousands
+
+```{r, fig.width=4, fig.height=4}
+boxplot(bankDetails$othdebt)
+```
+
+
+This shows highest number of outliers as people having any kind of debt greater then 10,000 are 147 in number also there default status is equalily likely. but those whose debt is greater then 20 are mostly defaulters.
+
+
+

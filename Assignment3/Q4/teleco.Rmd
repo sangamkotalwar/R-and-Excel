@@ -3,8 +3,8 @@ title: "Teleco"
 author: "Sangamesh"
 date: "24 September 2018"
 output:
-  word_document: default
   pdf_document: default
+  word_document: default
   html_document: default
 ---
 
@@ -76,18 +76,15 @@ for (col in 2:(ncol(data)-1)) {
 }
 ```
 
-# EDA
-```{r echo=F, messages=F, warning=F}
-ggdensity()
-```
-# PCA 
+# PCA on Scaled Data
 ```{r warnings=F,echo=F, messages=F}
 library(psych)
+data <- scale(data, center = TRUE, scale = TRUE)
 pca <- principal(data, nfactors = 4, residuals = FALSE, rotate="none", scores=TRUE)
 pca
 #pca$values
-#plot(pca$values, type = "b")
+#plot(pca$values, type = "b") #Scree plot analysis
 ```
 
 Result: As a result of PCA,
-COmponents having highest variability are custcat, equipmon, equipten, marital
+Components having highest variability and which will show the same variation as complete data according to PCA are custcat, equipmon, equipten, marital
