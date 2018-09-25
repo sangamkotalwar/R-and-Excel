@@ -1,0 +1,74 @@
+---
+title: "Assignment3_B_1_1"
+author: "Sangamesh"
+date: "25 September 2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Reading data and making data into training and test data.
+```{r echo=F, message=F, error=F, warning=F}
+RawData <- read.table("RegD1.txt", header=T)
+#Considering every tenth data
+test = seq(10,nrow(RawData),by=10)
+#trainData
+trainData <- RawData[-test,]
+print("head of training data")
+print(head(trainData))
+#testData
+testData <- RawData[test,]
+print("head of testing data")
+print(head(testData))
+```
+
+Fitting data for linear regression model
+```{r echo=F, message=F, error=F, warning=F}
+
+model <- lm(Y1~X1+X2, data=trainData)
+summary(model)
+```
+
+Several metrics useful for regression diagnostics : model.diag.metrics
+```{r echo=F, message=F, error=F, warning=F}
+library(broom)
+model.diag.metrics <- augment(model)
+head(model.diag.metrics)
+```
+
+Meta Data for model.diag.metrics
+Among the table columns, there are:
+
+Y1: original values
+X1, X2: the observed values
+.fitted: the fitted values
+.resid: the residual errors
+
+We can see the plot in residual and fitted plot here now:
+```{r echo=F, message=F, error=F, warning=F}
+plot(model, pch=16, which=1)
+```
+
+The following plot shows the residuals error (in red color) between observed values and the fitted regression line. Each vertical red segments represents the residual error between an observed sale value and the corresponding predicted (i.e. fitted) value.
+
+Note how the residuals plot of this last model shows some important points still lying far away from the middle area of the graph. 
+
+Let’s visualize a three-dimensional interactive graph with both predictors and the target variable and the linear fit from the last model:
+
+
+```{r echo=F, message=F, error=F, warning=F}
+# library(ggplot2)
+# ggplot(model.diag.metrics, aes(Y1, X1, X2)) +
+#   geom_point() +
+#   stat_smooth(method = lm, se = FALSE) +
+#   geom_segment(aes(xend = Y1, yend = .fitted), color = "red", size = 0.3)
+```
+
+```{r}
+#library(car)
+library(stats)
+qqnorm(residuals(model))
+qqline(residuals(model))
+```
