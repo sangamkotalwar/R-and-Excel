@@ -1,7 +1,7 @@
 ---
-title: "Assignment3_B_1_1"
+title: "Assignment3_B_1_3"
 author: "Sangamesh"
-date: "25 September 2018"
+date: "26 September 2018"
 output:
   html_document:
     df_print: paged
@@ -15,7 +15,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Reading data and making data into training and test data.
 ```{r echo=F, message=F, error=F, warning=F}
-RawData <- read.table("RegD1.txt", header=T)
+RawData <- read.table("RegD3.txt", header=T)
 #Considering every tenth data
 test = seq(10,nrow(RawData),by=10)
 #trainData
@@ -31,7 +31,7 @@ print(head(testData))
 Fitting data for linear regression model
 ```{r echo=F, message=F, error=F, warning=F}
 
-model <- lm(Y1~X1+X2, data=trainData)
+model <- lm(Y1~X1+X2+X4, data=trainData)
 summary(model)
 ```
 
