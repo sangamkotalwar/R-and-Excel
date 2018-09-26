@@ -46,25 +46,23 @@ X1, X2: the observed values
 .fitted: the fitted values
 .resid: the residual errors
 
+
+Let's see correlation between the features:
+```{r echo=F, message=F, error=F, warning=F}
+library(corrplot)
+#corrplot(trainData, method = "number")
+```
 We can see the plot in residual and fitted plot here now:
 ```{r echo=F, message=F, error=F, warning=F}
 plot(model, pch=16, which=1)
 ```
 
-The following plot shows the residuals error (in red color) between observed values and the fitted regression line. Each vertical red segments represents the residual error between an observed sale value and the corresponding predicted (i.e. fitted) value.
+Note how the residuals plot of this last model shows some important points still lying far away from the middle area of the graph. Since the behaviour is random in nature we were successful in this test.
 
-Note how the residuals plot of this last model shows some important points still lying far away from the middle area of the graph. 
-
-Let’s visualize a three-dimensional interactive graph with both predictors and the target variable and the linear fit from the last model:
-
-
-```{r echo=F, message=F, error=F, warning=F}
-# library(ggplot2)
-# ggplot(model.diag.metrics, aes(Y1, X1, X2)) +
-#   geom_point() +
-#   stat_smooth(method = lm, se = FALSE) +
-#   geom_segment(aes(xend = Y1, yend = .fitted), color = "red", size = 0.3)
+```{}
+###Let’s visualize a three-dimensional interactive graph with both predictors and the target variable and the linear fit from the last model:###
 ```
+
 
 ```{r}
 #library(car)
@@ -72,3 +70,25 @@ library(stats)
 qqnorm(residuals(model))
 qqline(residuals(model))
 ```
+
+Check outliers:
+```{r}
+library(car)
+leveragePlots(model)
+```
+
+We can see that there are outliers in this dataset mainly row 5,42,57,32 from X1, and 18,42,57,1 from X2. So, overall number 42 and 57 are outliers.
+
+Influential Variables :
+Fiding influential data points is required. 
+So let us look at variable plots:
+```{r echo=F, message=F, warning=F, error=FALSE}
+# Cook's D plot
+# identify D values > 4/(n-k-1 )
+cutoff <- 4/((nrow(trainData)-length(model$coefficients)-2)) 
+plot(model, which=4, cook.levels=cutoff)
+# It shows datapoints 1,5 and 47 are influential
+influencePlot(model, main="Influence Plot", sub="Circle size is proportial to Cook's Distance" )
+```
+
+
