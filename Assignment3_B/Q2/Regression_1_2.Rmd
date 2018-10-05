@@ -1,0 +1,180 @@
+---
+title: "B. Regression - I : Question 2"
+author: "Author: Sangamesh"
+output:
+  pdf_document: default
+  word_document: default
+  html_document:
+    df_print: paged
+---
+
+Question: Use the data set , to fit a model. Perform regression diagnostics on this model. Display any plots that are relevant.
+
+(a) Check and comment on the constant variance assumption for the errors.
+(b) Check and comment on the normality assumption.
+(c) Check and comment on the large leverage points.
+(d) Check and comment on the outliers.
+(e) Check and comment on the influential points.
+(f) Check and comment on the structure of the relationship between the predictors and the
+response.
+(g) Compute and comment on the condition numbers.
+(h) Compute and comment on the correlations between the predictors.
+(i) Compute and comment on the VIF.
+
+--------------------------------------------------------------------------------------------------------------------
+
+####Linear Model  
+  
+\hfill\break  
+```{r data_load,,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+library(dplyr)
+data_regd4 = read.table("RegD14.txt", header=TRUE)
+
+# Divding the dataset into train and test set.
+train4 = slice(data_regd4, seq(-10, -nrow(data_regd4), -10))
+test4 = slice(data_regd4, seq(10, nrow(data_regd4), 10))
+
+# Linear Model
+model_reg4=lm(Y~.,train4)
+summary(model_reg4)
+```
+####DIAGNOSIS
+
+### **Regression assumptions**
+
+Linear regression makes several assumptions about the data, such as :
+i) Linearity of the data. The relationship between the predictor (x) and the outcome (y) is assumed to be linear.
+ii) Normality of residuals. The residual errors are assumed to be normally distributed.
+iii) Homogeneity of residuals variance. The residuals are assumed to have a constant variance (homoscedasticity)
+iv) Independence of residuals error terms.
+
+
+All these assumptions and potential problems can be checked by producing some diagnostic plots visualizing the residual errors.
+
+**Diagnostic plots**
+\hfill\break  
+  
+  *a) Check and comment on the constant variance assumption for the errors.*
+\hfill\break
+Scale-Location (or Spread-Location) is used to check the homogeneity of variance of the residuals i.e. they have a constant variance (homoscedasticity).  
+  Horizontal line with equally spread points is a good indication of homoscedasticity.
+  \hfill\break  
+  
+```{r, fig.width=4, fig.height=4,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+plot(model_reg4,3)
+```
+  
+  \hfill\break
+ 
+  **Inference: The variance is always constant. Hence our assumption holds true.** 
+  
+  \hfill\break
+  *(b) Check and comment on the normality assumption.*
+\hfill\break  
+  
+  Normal Q-Q is used to examine whether the residuals are normally distributed. It’s good if residuals points follow the straight dashed line.  
+\hfill\break  
+  
+```{r, fig.width=4, fig.height=4,,echo=FALSE}
+hist(residuals(model_reg4),breaks=20)
+
+qqnorm (residuals (model_reg4), ylab="Residuals")
+qqline (residuals (model_reg4))
+```
+
+\hfill\break  
+  
+  **Inference: The residual errors are normally distributed and hence our second assumption also holds true.But, there are three extreme outliers.**  
+  .
+  
+\hfill\break
+  *(c) Check and comment on the large leverage points.*  
+  \hfill\break  
+  A data point has high leverage, if it has extreme predictor x values. This can be detected by examining the leverage statistic or the hat-value. A value of this statistic above 2(p + 1)/n indicates an observation with high leverage where, p is the number of predictors and n is the number of observations.  
+  \hfill\break  
+  The Residuals vs Leverage plot can help us to find influential observations if any.
+    \hfill\break  
+  
+```{r, fig.width=4, fig.height=4,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+# Residuals vs Leverage
+plot(model_reg4, 5)
+```
+
+**Inference: Corresponding to the leverage statistic i.e. [[2*(p+1)]/n]] 0.31, there are only 2 points having high leverage.  **
+ 
+\hfill\break
+  *(d) Check and comment on the outliers.*  
+  \hfill\break  
+  Outliers can be identified by examining the standardized residual (or studentized residual), which is the residual divided by its estimated standard error. Standardized residuals can be interpreted as the number of standard errors away from the regression line.  
+  Observations whose standardized residuals are greater than 3 in absolute value are possible outliers  
+  \hfill\break  
+  On this plot, outlying values are generally located at the upper right corner or at the lower right corner. Those spots are the places where data points can be influential against a regression line.
+    \hfill\break  
+  
+```{r, fig.width=4, fig.height=4,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+# Residuals vs Leverage
+plot(model_reg4, 5,id.n = 3)
+```
+
+**Inference: There are approx 2-3 outliers present.**
+ 
+\hfill\break
+  *(e) Check and comment on the influential points.*  
+  An influential value is a value, which inclusion or exclusion can alter the results of the regression analysis. Such a value is associated with a large residual.  
+  \hfill\break  
+  Statisticians have developed a metric called Cook's distance to determine the influence of a value. This metric defines influence as a combination of leverage and residual size.  
+    A rule of thumb is that an observation has high influence if Cook's distance exceeds 4/(n - p - 1), where n is the number of observations and p the number of predictor variables.
+    \hfill\break  
+  
+```{r, fig.width=4, fig.height=4,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+# Cook's distance
+plot(model_reg4, 4,id.n = 2)
+```
+
+**Inference:From above plot we can see there are 2 points(#3,#5) exceeding Cook's distance(in our case, 0.10).  **
+ 
+\hfill\break
+  *(g) Compute and comment on the correlations between the predictors.* 
+  
+  \hfill\break  
+```{r, fig.width=4, fig.height=4,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+round(cor(train4[,-c(7)]), 3)
+```
+
+**Inference: There are several large pairwise correlations both between predictors and between predictors and the response. **
+
+  *(h) Compute and comment on the condition numbers.*  
+  Condition numbers, indicate whether more than just one independent linear combination is to blame.
+  \hfill\break  
+```{r, fig.width=4, fig.height=4,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+x=model.matrix(model_reg4)
+e=eigen (t(x) %*% x)
+cat("\nEigen Values: \n")
+e$val
+cat("\nCondition Numbers: \n")
+sqrt(e$val[1]/e$val)
+```
+**Inference: There is a wide range in the eigenvalues and several condition numbers are large. This means that problems are being caused by more than just one linear combination. **
+
+\hfill\break
+  *(i) Compute and comment on the VIF.*  
+  VIF Test for removal of multicollinearity.  
+    VIFi>10 indicates serious multicollinearity  for the predictor. 
+  
+  \hfill\break  
+```{r, fig.width=4, fig.height=4,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+library(faraway)
+summary(model_reg4)
+vif(model_reg4)
+```
+  
+  Re-computing VIF's after removing variable with highest VIF value
+  
+```{r, fig.width=4, fig.height=4,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+for_vif=lm(Y~. -X5 -X4 -X3,data=train4)
+vif(for_vif)
+summary(for_vif)
+```
+  
+  **Inference: we see that the accuracy is mostly unaffected even after removing the correlated variables and reducing the dimension by 3**
+

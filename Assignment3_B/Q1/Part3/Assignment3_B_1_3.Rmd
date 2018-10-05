@@ -79,7 +79,7 @@ leveragePlots(model)
 ```
 
 Check if errors are auto corelated
-```{r echo=F, error=F, warning=FALSE}
+```{r echo=F, error=F, warning=FALSE, message=F}
 library(lmtest)
 dwtest(model)
 ```

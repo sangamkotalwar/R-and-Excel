@@ -1,0 +1,111 @@
+---
+title: 'B. Regression - I : Question 6'
+author: 'Author: Sangamesh'
+output:
+  pdf_document: default
+  word_document: default
+  html_document:
+    df_print: paged
+---
+  
+  Question: Consider the data RegD9.txt remove every tenth observation from the data for use as a test sample. Use the remaining data as a training sample building the following models.
+  (a) Linear regression with all predictors.
+  (b) Linear regression with variables selected using AIC.
+  (c) Principle component regression.
+  (d) Partial least squares.
+  (e) Ridge regression.
+Use the models you find to predict the response in the test sample. Make a report on the
+performance of the models.  
+  
+---------------------------------------------------------------------------------------------------------------------------------------
+  
+####(a) Linear regression with all predictors
+   
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+library(dplyr)
+data_regd9 = read.table("RegD9.txt", header=TRUE)
+
+# Divding the dataset into train and test set.
+train9=slice(data_regd9, seq(-10, -nrow(data_regd9), -10))
+test9=slice(data_regd9, seq(10, nrow(data_regd9), 10))
+
+# Linear Model
+model_reg9=lm(Y~.,train9)
+summary(model_reg9)
+```
+  \hfill\break 
+*Inference: Value of for the linear model using predictor variables from Linear regression with all predictors: R-squared=0.9769,	Adjusted R-squared= 0.9754 *
+  
+####(b) Linear regression with variables selected using AIC.
+   
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+null=lm(Y~1, data= train9)
+full=lm(Y~., data= train9)
+ step(null, scope=list(lower=null, upper=full), direction="both")
+```
+  \hfill\break   
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+aic_model=lm(Y~X1+X2+X7, train9)
+summary(aic_model)
+```
+  \hfill\break 
+*Inference: Value of for the linear model using predictor variables from AIC: R-squared=0.9764,	Adjusted R-squared= 0.9761 *
+  
+####(c) Principle component regression.
+   
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+library(psych)
+data <- scale(data_regd9, center = TRUE, scale = TRUE)
+pca <- principal(data_regd9, nfactors = 3, residuals = FALSE, rotate="none", scores=TRUE)
+pca
+```
+ \hfill\break 
+*Inference: After looking at different eigen values we come to conclusion  that we require 3 PC's. After looking at the correlation matrix, we conclude the PCs are X3(0.97), X1(0.61), X2(0.72)*
+
+\hfill\break   
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+pca_model=lm(Y~X1+X2+X3, train9)
+summary(pca_model)
+```
+\hfill\break
+*Inference: Value of for the linear model using predictor variables from PCA: R-squared=0.9761,	Adjusted R-squared= 0.9758 *
+
+####(c) Partial Least Squares
+   
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+library(plsdepot)
+dataPLS <- train9[,c(1,3:12,2)]
+pls1 = plsreg1(dataPLS[,1:11], dataPLS[,12, drop=FALSE], comps = 3)
+```
+\hfill\break
+**R2 value for each of our components**
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+pls1$R2
+```
+\hfill\break
+**Now let's look at what is highly correlated with Y with a plot**
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+plot(pls1)
+```
+
+\hfill\break
+**From the plot we see that X1 with negative impact, X6 and x7 with positive impact make better correlation with Y so we will make our model accoring to these predictors**
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+pls_model=lm(Y~X1+X6+X7, train9)
+summary(pls_model)
+```
+\hfill\break
+*Inference: Value of for the linear model using predictor variables from PCA: R-squared=0.9761,	Adjusted R-squared= 0.9758 *
+
+####(c) Ridge regression
+Ridge attempts to minimize residual sum of squares of predictors in a given model. However, ridge regression includes an additional ‘shrinkage’ term – the square of the coefficient estimate – which shrinks the estimate of the coefficients towards zero. The impact of this term is controlled by another term, lambda (determined seperately). 
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+library(glmnet)
+lambdas <- 10^seq(3, -2, by = -.1)
+ridgeModel <- lm.ridge(ridgeY~train9$X8+train9$X6+train9$X7, lambda = lambdas, alpha=0)
+summary(ridgeModel)
+plot(ridgeModel)
+```
+
+
+

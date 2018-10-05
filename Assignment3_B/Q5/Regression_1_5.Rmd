@@ -1,0 +1,216 @@
+---
+title: 'B. Regression - I : Question 5'
+author: 'Author: Sangamesh'
+output:
+  pdf_document: default
+  word_document: default
+  html_document:
+    df_print: paged
+---
+  
+  Question: Use the data to fit a linear model. Implement the following variable selection
+methods to determine the "best" model.  
+  (a) Backward Elimination.  
+  (b) AIC, AICC, BIC.  
+  (c) R2, R2a  
+  (d) Mallows Cp.
+
+-----------------------------------------------------------------------------------------------------------------
+
+####(a) Backward Elimination.
+  \hfill\break  
+  It starts with all predictors in the model (full model), iteratively removes the least contributive predictors, and stops when you have a model where all predictors are statistically significant.  
+  \hfill\break 
+  
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+library(dplyr)
+data_regd8 = read.table("RegD8.txt", header=TRUE)
+
+# Divding the dataset into train and test set.
+train8=slice(data_regd8, seq(-10, -nrow(data_regd8), -10))
+test8=slice(data_regd8, seq(10, nrow(data_regd8), 10))
+
+null=lm(Y~1, data= train8)
+full=lm(Y~., data= train8)
+
+library(leaps)
+back_model=step(full, direction="backward")
+
+```
+\hfill\break   
+*Best Model suggested by Backward elimination : lm(Y~X1+X2+X3+X4+X5) *    
+\hfill\break   
+Predicting the test data
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+back_predict <- back_model %>% predict(test8)
+# Model performance metrics
+data.frame(
+  RMSE = caret::RMSE(back_predict, test8$Y),
+  Rsquare = caret::R2(back_predict, test8$Y)
+)
+```
+\hfill\break
+
+####(b.1) AIC
+  \hfill\break
+  AIC stands for (Akaike's Information Criteria). The basic idea of AIC is to penalize the inclusion of additional variables to a model. It adds a penalty that increases the error when including additional terms. The lower the AIC, the better the model.  
+  \hfill\break 
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+aic_model=step(null, scope=list(lower=null, upper=full), direction="both")
+```
+  
+*Best Model suggested by AIC : lm(Y~X1+X2+X5) *  
+\hfill\break   
+  
+  Predicting the test data
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+aic_predict <- aic_model %>% predict(test8)
+# Model performance metrics
+data.frame(
+  RMSE = caret::RMSE(aic_predict, test8$Y),
+  Rsquare = caret::R2(aic_predict, test8$Y)
+)
+```
+
+\hfill\break 
+
+####(b.2)BIC
+\hfill\break  
+  Bayesian Information Criterion is a variant of AIC with a stronger penalty for including additional variables to the model.  
+  The lower the BIC, the better the model.
+  \hfill\break 
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+library(leaps)
+library(car)
+bic_model=regsubsets(Y~.,data=train8, nbest=1,method="exhaustive")
+subsets(bic_model,statistic = "bic",legend=FALSE)
+```
+  
+  *Best Model suggested by BIC : lm(Y~X1+X2+X5)*
+\hfill\break  
+  
+  Predicting the test data 
+
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+bic_model=lm(Y~X1+X2+X5, train8)
+bic_predict <- bic_model %>% predict(test8)
+# Model performance metrics
+data.frame(
+  RMSE = caret::RMSE(bic_predict, test8$Y),
+  Rsquare = caret::R2(bic_predict, test8$Y)
+)
+```
+\hfill\break  
+
+####(b.3)AICc
+  \hfill\break 
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+library(glmulti)
+aicc_model=glmulti(Y~.,data=train8,crit="aicc",level=1,confsetsize=50,fitfunction=lm,plotty = F, report = F)
+summary(aicc_model@objects[[1]])
+
+```
+
+*Best Model suggested by AICc : lm(Y~X1+X2+X5)*
+
+\hfill\break   
+
+Predicting the test data  
+
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+aicc_model=lm(Y~X1+X2+X5, train8)
+aicc_predict <- aicc_model %>% predict(test8)
+# Model performance metrics
+data.frame(
+  RMSE = caret::RMSE(aicc_predict, test8$Y),
+  Rsquare = caret::R2(aicc_predict, test8$Y)
+)
+```
+\hfill\break  
+
+####(d.1)R2
+\hfill\break    
+   It is the square of the sample correlation coefficient between the observed outcomes and the observed predictor values. Ranges from 0 to 1. Higher the R2, better the model.
+
+  \hfill\break   
+  
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+
+r2_model=regsubsets(Y~.,data=train8, nbest=1,method="exhaustive")
+b=subsets(r2_model,statistic = "rsq",legend=FALSE,ylim=c(0.64,0.67))
+```
+*Best Model suggested by R2 : lm(Y~X1+X2+X3+X4+X5+X6+X8)*
+\hfill\break  
+
+Predicting the test data   
+
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+r2_model=lm(Y~X1+X2+X3+X4+X5+X6+X8, train8)
+r2_predict <- r2_model %>% predict(test8)
+# Model performance metrics
+data.frame(
+  RMSE = caret::RMSE(r2_predict, test8$Y),
+  Rsquare = caret::R2(r2_predict, test8$Y)
+)
+```
+\hfill\break
+
+####(d.2)R2a
+\hfill\break    
+   The adjusted R-squared compares the descriptive power of regression models that include diverse numbers of predictors. Every predictor added to a model increases R-squared and never decreases it. Thus, a model with more terms may seem to have a better fit just for the fact that it has more terms, while the adjusted R-squared compensates for the addition of variables and only increases if the new term enhances the model above what would be obtained by probability and decreases when a predictor enhances the model less than what is predicted by chance. 
+
+  \hfill\break   
+  
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+r2a_model=regsubsets(Y~.,data=train8, nbest=1,method="exhaustive")
+subsets(r2a_model,statistic = "adjr2",legend=FALSE, ylim=c(0.6,0.65))
+```
+*Best Model suggested by R2 : lm(Y~X1+X2+X3+X4+X5)*
+\hfill\break  
+
+Predicting the test data   
+
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+r2a_model=lm(Y~X1+X2+X3+X4+X5, train8)
+r2a_predict <- r2a_model %>% predict(test8)
+# Model performance metrics
+data.frame(
+  RMSE = caret::RMSE(r2a_predict, test8$Y),
+  Rsquare = caret::R2(r2a_predict, test8$Y)
+)
+```
+\hfill\break
+
+####(d)Mallow's Cp
+\hfill\break    
+  A small Mallows' Cp value indicates that the model is relatively precise (has small variance) in estimating the true regression coefficients and predicting future responses.  
+
+  \hfill\break   
+  
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+library(leaps)
+library(car)
+mcp_model=regsubsets(Y~.,data=train8, nbest=1,method="exhaustive")
+subsets(mcp_model,statistic = "cp",legend=FALSE,ylim=c(0,5))
+```
+*Best Model suggested by Mallow's Cp : lm(Y~X1+X2+X5)*
+\hfill\break  
+
+Predicting the test data   
+
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+mcp_model=lm(Y~X1+X2+X5, train8)
+mcp_predict <- mcp_model %>% predict(test8)
+# Model performance metrics
+data.frame(
+  RMSE = caret::RMSE(mcp_predict, test8$Y),
+  Rsquare = caret::R2(mcp_predict, test8$Y)
+)
+```
+\hfill\break  
+
+**Final Inferences**  
+  **a) Highest accuracy is achieved by the variables selected in R2 model though it contains the maximum number of variables**  
+  **b) The variables selected by R2a and backward elimination rank second in terms of accuracy but have a reduced number of variables. **  
+  **c) AIC, BIC, AICc and Mallow's Cp yielded the same subset variables and have the least accuracy and number of variables..**
+  
