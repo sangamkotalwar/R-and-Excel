@@ -1,0 +1,88 @@
+---
+title: "Assignment 3 - REgression II"
+author: "Sangamesh"
+date: "12 October 2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Generating random 1,000,000 points according to below rules: data14a_1.txt
+```{r echo=F}
+n1 <- 1000000
+x1 <- 1:n1
+x2 <-runif(n1,5,95)
+x3 <- rbinom(n1,1,.4)
+x4 <- rnorm(n1, mean=-30, sd=200)
+x5 <- runif(n1,-5000,5000)
+b0 <- 17; b1 <- -0.466; b2 <- 0.037; b3 <- -5.2; b4 <- 2; b5 <- 0.008762
+sigma <- 1.4
+epsilon <- rnorm(x1,0,sigma)
+y <- b0 + b1*x1 + b2*x2 + b3*x3 + b4*x4 + b5*x5 + x1*x2 + epsilon
+data14a_1<-cbind(y,x1,x2,x3,x4,x5)
+write.table(data14a_1, file = "data14a_1.txt", sep = " ", quote=T)
+```
+\hfill\break
+Generating random 10,000,000 points according to below rules: data14a_3.txt
+```{r echo=F}
+n1 <- 10000000
+x1 <- 1:n1
+x2 <-runif(n1,5,95)
+x3 <- rbinom(n1,1,.4)
+x4 <- rnorm(n1, mean=-30, sd=200)
+x5 <- runif(n1,-5000,5000)
+b0 <- 17; b1 <- -0.466; b2 <- 0.037; b3 <- -5.2; b4 <- 2; b5 <- 0.008762
+sigma <- 1.4
+epsilon <- rnorm(x1,0,sigma)
+y <- b0 + b1*x1 + b2*x2 + b3*x3 + b4*x4 + b5*x5 + x1*x2 + epsilon
+data14a_2<-cbind(y,x1,x2,x3,x4,x5)
+write.table(data14a_2, file = "data14a_2.txt", sep = " ", quote=T)
+```
+\hfill\break
+Generating random 50,000,000 points according to below rules: data14a_3.txt
+```{r echo=F}
+n1 <- 50000000
+x1 <- 1:n1
+x2 <-runif(n1,5,95)
+x3 <- rbinom(n1,1,.4)
+x4 <- rnorm(n1, mean=-30, sd=200)
+x5 <- runif(n1,-5000,5000)
+b0 <- 17; b1 <- -0.466; b2 <- 0.037; b3 <- -5.2; b4 <- 2; b5 <- 0.008762
+sigma <- 1.4
+epsilon <- rnorm(x1,0,sigma)
+y <- b0 + b1*x1 + b2*x2 + b3*x3 + b4*x4 + b5*x5 + x1*x2 + epsilon
+data14a_3<-cbind(y,x1,x2,x3,x4,x5)
+write.table(data14a_3, file = "data14a_3.txt", sep = " ", quote=T)
+```
+\hfill\break
+Generating random 100,000,000 points according to below rules: data14a_4.txt
+```{r echo=F}
+n1 <- 100000000
+x1 <- 1:n1
+x2 <-runif(n1,5,95)
+x3 <- rbinom(n1,1,.4)
+x4 <- rnorm(n1, mean=-30, sd=200)
+x5 <- runif(n1,-5000,5000)
+b0 <- 17; b1 <- -0.466; b2 <- 0.037; b3 <- -5.2; b4 <- 2; b5 <- 0.008762
+sigma <- 1.4
+epsilon <- rnorm(x1,0,sigma)
+y <- b0 + b1*x1 + b2*x2 + b3*x3 + b4*x4 + b5*x5 + x1*x2 + epsilon
+data14a_4<-cbind(y,x1,x2,x3,x4,x5)
+write.table(data14a_4, file = "data14a_4.txt", sep = " ", quote=T)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
