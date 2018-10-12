@@ -1,0 +1,132 @@
+---
+title: "Assignment3_B_1_3"
+author: "Sangamesh"
+date: "26 September 2018"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Reading data and making data into training and test data.
+```{r echo=F, message=F, error=F, warning=F}
+RawData <- read.table("RegD3.txt", header=T)
+#Considering every tenth data
+test = seq(10,nrow(RawData),by=10)
+#trainData
+trainData <- RawData[-test,]
+print("head of training data")
+print(head(trainData))
+#testData
+testData <- RawData[test,]
+print("head of testing data")
+print(head(testData))
+```
+
+Fitting data for linear regression model
+```{r echo=F, message=F, error=F, warning=F}
+
+model <- lm(Y1~X1+X2+X4, data=trainData)
+summary(model)
+```
+
+Several metrics useful for regression diagnostics : model.diag.metrics
+```{r echo=F, message=F, error=F, warning=F}
+library(broom)
+model.diag.metrics <- augment(model)
+head(model.diag.metrics)
+```
+
+Meta Data for model.diag.metrics
+Among the table columns, there are:
+
+Y1: original values
+X1, X2: the observed values
+.fitted: the fitted values
+.resid: the residual errors
+
+
+####Let's see correlation between the features:
+```{r echo=F, message=F, error=F, warning=F}
+# library(corrplot)
+# corrplot(model, method = "number")
+```
+We can see the plot in residual and fitted plot here now:
+```{r echo=F, message=F, error=F, warning=F}
+plot(model, pch=16, which=1)
+```
+
+Note how the residuals plot of this last model shows some important points still lying far away from the middle area of the graph. Since the behaviour is random in nature we were successful in this test.
+
+```{r echo=FALSE}
+library(car)
+library(stats)
+#qqnorm(residuals(model))
+#qqline(residuals(model))
+qq <- qqPlot(model, main="QQ Plot")
+print(qq)
+```
+
+Check outliers:
+```{r echo=FALSE}
+library(car)
+leveragePlots(model)
+```
+
+Check if errors are auto corelated
+```{r echo=F, error=F, warning=FALSE, message=F}
+library(lmtest)
+dwtest(model)
+```
+We can see that there are outliers in this dataset mainly row 5,42,57,32 from X1, and 18,42,57,1 from X2. So, overall number 42 and 57 are outliers.
+
+Influential Variables :
+Fiding influential data points is required. 
+So let us look at variable plots:
+```{r echo=F, message=F, warning=F, error=FALSE}
+# Cook's D plot
+# identify D values > 4/(n-k-1 )
+cutoff <- 4/((nrow(trainData)-length(model$coefficients)-2)) 
+plot(model, which=4, cook.levels=cutoff)
+# It shows datapoints 1,5 and 47 are influential
+influencePlot(model, main="Influence Plot", sub="Circle size is proportial to Cook's Distance" )
+```
+
+
+Checking for Multi-collinearity:
+```{r echo=F, message=F, error=F, warning=F}
+# Evaluate Collinearity
+vif(model) # variance inflation factors 
+sqrt(vif(model)) > 2 # problem?
+```
+
+Non-constant Error Variance:
+```{r echo=F, error=F, warning=F, message=F}
+# Evaluate homoscedasticity
+# non-constant error variance test
+ncvTest(model)
+# plot studentized residuals vs. fitted values 
+spreadLevelPlot(model)
+```
+
+Nonlinearity test:
+```{r echo=F, message=F, warning=FALSE, error=F}
+# Evaluate Nonlinearity
+# component + residual plot 
+#crPlots(model)
+# Ceres plots 
+ceresPlots(model)
+```
+So all the factors are linear which is required.
+
+Non-independence of Errors:
+```{r echo=F, message=F, error=F, warning=F}
+# Test for Autocorrelated Errors
+durbinWatsonTest(model)
+```
+

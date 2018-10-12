@@ -1,0 +1,91 @@
+---
+title: "B. Regression - I : Question 4"
+author: "Author: Sangamesh"
+output:
+  pdf_document: default
+  word_document: default
+  html_document:
+    df_print: paged
+---
+  
+  Question: Use the data to fit a model with Y as the response and only X3, X4, and X5 as predictors. Use the Box-Cox method to determine the best transformation on the response.
+
+------------------------------------------------------------------------------------------------------------------------
+
+```{r data_load,,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+library(dplyr)
+data_regd7 = read.table("RegD7.txt", header=TRUE)
+
+# Divding the dataset into train and test set.
+train7=slice(data_regd7, seq(-10, -nrow(data_regd7), -10))
+test7=slice(data_regd7, seq(10, nrow(data_regd7), 10))
+
+# Linear Model
+model_reg7=lm(Y~X3+X4+X5,train7)
+summary(model_reg7)
+```
+
+### **Normality test**
+  
+  Shapiro-Wilk's method is widely recommended for normality test and it provides better power than K-S. It is based on the correlation between the data and the corresponding normal scores.
+
+```{r ,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+shapiro.test(train7$Y)
+```
+  \hfill\break 
+*Inference: Since the p-value is less than 0.05, the variable is not normally distibuted and we need to power transformation on it.*
+
+\hfill\break 
+
+#### **Box-Cox Method: Determining the best transformation on the response **
+  
+  The Box-Cox method is a popular way to determine a transformation on the response. It is designed for strictly positive responses and chooses the transformation to find the best fit to the data.
+  \hfill\break  
+  Some general considerations concerning the BoxCox method are:
+\hfill\break
+1. The Box-Cox method gets upset by outliers if you find lambda=5, then this is probably
+the reason there can be little justification for actually making such an extreme
+transformation.
+\hfill\break
+2. If some yi <0, we can add a constant to all the y. This can work provided the constant is
+small, but this is an inelegant solution.
+\hfill\break
+3. If max i y i /min i y i is small, then the Box-Cox will not have much real effect because
+power transforms are well approximated by linear transformations over short intervals
+far from the origin.
+\hfill\break
+  
+```{r ,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+library(MASS)
+bc=boxcox(model_reg7,plotit=T,lambda=seq (-1.0, 5.0, by=2.0))
+lambda=bc$x[which.max(bc$y)]
+lambda
+```
+  \hfill\break 
+*Inference: Since value of lambda is reaching 5, we have to perform extreme transformation with lambda=0.27.*
+```{r ,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+powerTransform <- function(y, lambda1, lambda2 = NULL, method = "boxcox") {
+
+  boxcoxTrans <- function(x, lam1, lam2 = NULL) {
+
+    # if we set lambda2 to zero, it becomes the one parameter transformation
+    lam2 <- ifelse(is.null(lam2), 0, lam2)
+
+    if (lam1 == 0L) {
+      log(y + lam2)
+    } else {
+      (((y + lam2)^lam1) - 1) / lam1
+    }
+  }
+
+  switch(method
+         , boxcox = boxcoxTrans(y, lambda1, lambda2)
+         , tukey = y^lambda1
+  )
+}
+
+mnew <- lm(powerTransform(Y, lambda)~X3+X4+X5, train7)
+shapiro.test(powerTransform(train7$Y, lambda))
+```
+  \hfill\break 
+*Inference: After doing power transform, the shapiro test significantly increases the p-value, and the optimal valyue of lambda for this p-value is 0.27 *
