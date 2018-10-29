@@ -1,0 +1,50 @@
+---
+title: "Assignment3_D_A"
+author: "Sangamesh"
+date: "29 October 2018"
+output: pdf_document
+---
+
+Identify the ARIMA(p, d, q) model and the white noise variance estimate for the given data sets. (Use ts.plot, acf, pacf, eacf, arima, etc. Avoid using auto.arima except for verifying your answer.)
+
+Dataset1 : TSD1.txt
+```{r echo=F, warning=F, error=F, message=F}
+library(data.table)
+#library(forecast)
+tsd1 = fread("TSD1.txt") #Read table
+ts.plot(tsd1$x)
+```
+
+- Here we can see there is no trend and no seasonal component. Let's now plot acf and pacf
+```{r echo=F, warning=F, error=F, message=F}
+acf(tsd1$x)
+pacf(tsd1$x)
+```
+
+TSD Components
+```{r echo=F, warning=F, error=F, message=F}
+tsd1x <- ts(tsd1$x, frequency = 50)
+tsd1components <- decompose(tsd1x)
+plot(tsd1components)
+acf(tsd1x)
+```
+
+- The plot above shows the original time series (top), the estimated trend component (second from top), the estimated seasonal component (third from top), and the estimated irregular component (bottom).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
