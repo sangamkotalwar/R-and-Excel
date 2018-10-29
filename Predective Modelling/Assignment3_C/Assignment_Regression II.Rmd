@@ -1,0 +1,276 @@
+---
+title: "Assign1_1"
+author: "Sangamesh"
+date: "4 September 2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Loading of data
+
+Data files with n1 = 10^6, 10^7 and 5x10^7 are generated and their files are also created. But for n1 = 10^8, the memory reached limit and the PC stopped responding.
+
+
+
+```{r data1, echo=FALSE}
+n1 <- 1000000
+x1 <- 1:n1
+x2 <-runif(n1,5,95)
+x3 <- rbinom(n1,1,.4)
+x4 <- rnorm(n1, mean=-30, sd=200)
+x5 <- runif(n1,-5000,5000)
+b0 <- 17; b1 <- -0.466; b2 <- 0.037; b3 <- -5.2; b4 <- 2; b5 <- 0.00876
+sigma <- 1.4
+epsilon <- rnorm(x1,0,sigma)
+y <- b0 + b1*x1  + b2*x2  + b3*x3 + b4*x4 + b5*x5 + x1*x2 + epsilon
+fwrite(data.frame(cbind(y,x1,x2,x3,x4,x5)), file = "data14a.txt", sep = " ", quote=T)
+```
+
+```{r data2, echo=FALSE}
+n1 <- 10000000
+x1 <- 1:n1
+x2 <-runif(n1,5,95)
+x3 <- rbinom(n1,1,.4)
+x4 <- rnorm(n1, mean=-30, sd=200)
+x5 <- runif(n1,-5000,5000)
+b0 <- 17; b1 <- -0.466; b2 <- 0.037; b3 <- -5.2; b4 <- 2; b5 <- 0.00876
+sigma <- 1.4
+epsilon <- rnorm(x1,0,sigma)
+y <- b0 + b1*x1  + b2*x2  + b3*x3 + b4*x4 + b5*x5 + x1*x2 + epsilon
+fwrite(data.frame(cbind(y,x1,x2,x3,x4,x5)), file = "data14b.txt", sep = " ", quote=T)
+```
+
+```{r data3, echo=FALSE}
+n1 <- 50000000
+x1 <- 1:n1
+x2 <-runif(n1,5,95)
+x3 <- rbinom(n1,1,.4)
+x4 <- rnorm(n1, mean=-30, sd=200)
+x5 <- runif(n1,-5000,5000)
+b0 <- 17; b1 <- -0.466; b2 <- 0.037; b3 <- -5.2; b4 <- 2; b5 <- 0.00876
+sigma <- 1.4
+epsilon <- rnorm(x1,0,sigma)
+y <- b0 + b1*x1  + b2*x2  + b3*x3 + b4*x4 + b5*x5 + x1*x2 + epsilon
+fwrite(data.frame(cbind(y,x1,x2,x3,x4,x5)), file = "data14c.txt", sep = " ", quote=T)
+```
+
+<!--
+
+```{r data4, echo=FALSE}
+n1 <- 100000000
+x1 <- 1:n1
+x2 <-runif(n1,5,95)
+x3 <- rbinom(n1,1,.4)
+x4 <- rnorm(n1, mean=-30, sd=200)
+x5 <- runif(n1,-5000,5000)
+b0 <- 17; b1 <- -0.466; b2 <- 0.037; b3 <- -5.2; b4 <- 2; b5 <- 0.00876
+sigma <- 1.4
+epsilon <- rnorm(x1,0,sigma)
+y <- b0 + b1*x1  + b2*x2  + b3*x3 + b4*x4 + b5*x5 + x1*x2 + epsilon
+data14d<-cbind(y,x1,x2,x3,x4,x5)
+fwrite(as.data.frame(data14d), file = "data14d.txt", sep = " ", quote=T)
+```
+-->
+
+```{r data,echo=FALSE}
+library(data.table)
+data1 = fread("data14a.txt")
+data2 = fread("data14b.txt")
+data3 = fread("data14c.txt")
+#data4 = fread("data14d.txt")
+```
+
+#lm command
+
+```{r lm1, echo=FALSE}
+gc(reset = TRUE)
+start.time<-proc.time()
+lm1 = lm(y~., data1)
+summary(lm1)
+end.time<-proc.time()
+save.time<-end.time-start.time
+cat("\nNumber of minutes running: ", save.time[3]/60, "\n\n")
+gc()
+```
+
+```{r lm2, echo=FALSE}
+gc(reset = TRUE)
+start.time<-proc.time()
+summary(lm(y~., data2))
+end.time<-proc.time()
+save.time<-end.time-start.time
+cat("\nNumber of minutes running: ", save.time[3]/60, "\n\n")
+gc()
+```
+
+- lm command worked for n1 = 10^6 and 10^7 data files, but the memory allocation reached limit for further data files.
+
+#biglm command
+
+```{r biglm1, echo=FALSE}
+gc(reset = TRUE)
+start.time<-proc.time()
+summary(biglm(y~x1+x2+x3+x4+x5, data1))
+end.time<-proc.time()
+save.time<-end.time-start.time
+cat("\nNumber of minutes running: ", save.time[3]/60, "\n\n")
+gc()
+```
+
+```{r biglm2, echo=FALSE}
+gc(reset = TRUE)
+start.time<-proc.time()
+summary(biglm(y~x1+x2+x3+x4+x5, data2))
+end.time<-proc.time()
+save.time<-end.time-start.time
+cat("\nNumber of minutes running: ", save.time[3]/60, "\n\n")
+gc()
+```
+
+
+- biglm command worked for n1 = 10^6 and 10^7 data files, but the memory allocation reached limit for further data files. But in comparison with lm command, it is way faster in processing, as being shown by the RAM allocation and "Number of minutes running".
+
+
+#BigMemory & BigAnalytics
+
+```{r bigmemory, echo=FALSE}
+gc(reset = TRUE)
+start.time<-proc.time()
+
+n1 <- 1000000
+x1 <- 1:n1
+x2 <-runif(n1,5,95)
+x3 <- rbinom(n1,1,.4)
+x4 <- rnorm(n1, mean=-30, sd=200)
+x5 <- runif(n1,-5000,5000)
+b0 <- 17; b1 <- -0.466; b2 <- 0.037; b3 <- -5.2; b4 <- 2; b5 <- 0.00876
+sigma <- 1.4
+epsilon <- rnorm(x1,0,sigma)
+y <- b0 + b1*x1  + b2*x2  + b3*x3 + b4*x4 + b5*x5 + x1*x2 + epsilon
+
+
+write.big.matrix(as.big.matrix(cbind(y,x1,x2,x3,x4,x5)), file = "data14Tempa.txt", sep = " ")
+
+end.time<-proc.time()
+save.time<-end.time-start.time
+cat("\nNumber of minutes running to write: ", save.time[3]/60, "\n\n")
+
+start.time<-proc.time()
+
+w<-read.big.matrix("data14Tempa.txt", header=F, sep=" ", col.names = c("y","x1","x2","x3","x4","x5"))
+
+end.time<-proc.time()
+save.time<-end.time-start.time
+cat("\nNumber of minutes running to read: ", save.time[3]/60, "\n\n")
+
+start.time<-proc.time()
+
+summary(biglm.big.matrix(y~x1+x2+x3+x4+x5, w))
+
+end.time<-proc.time()
+save.time<-end.time-start.time
+cat("\nNumber of minutes running to find biglm: ", save.time[3]/60, "\n\n")
+
+gc()
+```
+
+
+```{r biganalytics1, echo=FALSE}
+
+gc(reset = TRUE)
+start.time<-proc.time()
+
+w<-read.big.matrix("data14b.txt", header=F, sep=" ", col.names = c("y","x1","x2","x3","x4","x5"))
+
+summary(bigglm.big.matrix(y~x1+x2+x3+x4+x5, w))
+
+end.time<-proc.time()
+save.time<-end.time-start.time
+cat("\nNumber of minutes running: ", save.time[3]/60, "\n\n")
+gc()
+```
+
+
+```{r biganalytics2, echo=FALSE}
+
+gc(reset = TRUE)
+start.time<-proc.time()
+
+w<-read.big.matrix("data14c.txt", header=F, sep=" ", col.names = c("y","x1","x2","x3","x4","x5"))
+
+summary(biglm.big.matrix(y~x1+x2+x3+x4+x5, w))
+
+end.time<-proc.time()
+save.time<-end.time-start.time
+cat("\nNumber of minutes running: ", save.time[3]/60, "\n\n")
+gc()
+```
+
+
+```{r netcdf1, echo=FALSE}
+library(biglm)
+library(ncdf4)
+
+n1 <- 1000000
+x1 <- 1:n1
+x2 <-runif(n1,5,95)
+x3 <- rbinom(n1,1,.4)
+x4 <- rnorm(n1, mean=-30, sd=200)
+x5 <- runif(n1,-5000,5000)
+b0 <- 17; b1 <- -0.466; b2 <- 0.037; b3 <- -5.2; b4 <- 2; b5 <- 0.00876
+sigma <- 1.4
+epsilon <- rnorm(x1,0,sigma)
+y <- b0 + b1*x1  + b2*x2  + b3*x3 + b4*x4 + b5*x5 + x1*x2 + epsilon
+
+ncpath <- "C:/Users/hp/Documents/Google Drive NIIT/Semester 7/Suman Sanyal/Predictive Modelling/Assign3/data/"
+ncname <- "ncdTemp1"
+ncfile <- paste(ncpath, ncname,".nc4",sep="")
+fwrite(data.frame(cbind(y,x1,x2,x3,x4,x5)),ncfile, row.names=FALSE, sep=" ")
+```
+
+
+```{r netcdf2, echo=FALSE}
+library(biglm)
+library(ncdf4)
+
+n1 <- 10000000
+x1 <- 1:n1
+x2 <-runif(n1,5,95)
+x3 <- rbinom(n1,1,.4)
+x4 <- rnorm(n1, mean=-30, sd=200)
+x5 <- runif(n1,-5000,5000)
+b0 <- 17; b1 <- -0.466; b2 <- 0.037; b3 <- -5.2; b4 <- 2; b5 <- 0.00876
+sigma <- 1.4
+epsilon <- rnorm(x1,0,sigma)
+y <- b0 + b1*x1  + b2*x2  + b3*x3 + b4*x4 + b5*x5 + x1*x2 + epsilon
+
+ncpath <- "C:/Users/hp/Documents/Google Drive NIIT/Semester 7/Suman Sanyal/Predictive Modelling/Assign3/data/"
+ncname <- "ncdTemp2"
+ncfile <- paste(ncpath, ncname,".nc",sep="")
+fwrite(data.frame(cbind(y,x1,x2,x3,x4,x5)),ncfile, row.names=FALSE, sep=" ")
+```
+
+
+```{r netcdf3, echo=FALSE}
+library(biglm)
+library(ncdf4)
+
+n1 <- 50000000
+x1 <- 1:n1
+x2 <-runif(n1,5,95)
+x3 <- rbinom(n1,1,.4)
+x4 <- rnorm(n1, mean=-30, sd=200)
+x5 <- runif(n1,-5000,5000)
+b0 <- 17; b1 <- -0.466; b2 <- 0.037; b3 <- -5.2; b4 <- 2; b5 <- 0.00876
+sigma <- 1.4
+epsilon <- rnorm(x1,0,sigma)
+y <- b0 + b1*x1  + b2*x2  + b3*x3 + b4*x4 + b5*x5 + x1*x2 + epsilon
+
+ncpath <- "C:/Users/hp/Documents/Google Drive NIIT/Semester 7/Suman Sanyal/Predictive Modelling/Assign3/data/"
+ncname <- "ncdTemp3"
+ncfile <- paste(ncpath, ncname,".nc",sep="")
+fwrite(data.frame(cbind(y,x1,x2,x3,x4,x5)),ncfile, row.names=FALSE, sep=" ")
+```
