@@ -8,28 +8,166 @@ output: pdf_document
 Identify the ARIMA(p, d, q) model and the white noise variance estimate for the given data sets. (Use ts.plot, acf, pacf, eacf, arima, etc. Avoid using auto.arima except for verifying your answer.)
 
 Dataset1 : TSD1.txt
+\hfill\break
 ```{r echo=F, warning=F, error=F, message=F}
 library(data.table)
 #library(forecast)
 tsd1 = fread("TSD1.txt") #Read table
 ts.plot(tsd1$x)
 ```
+\hfill\break
 
 - Here we can see there is no trend and no seasonal component. Let's now plot acf and pacf
+\hfill\break
 ```{r echo=F, warning=F, error=F, message=F}
 acf(tsd1$x)
 pacf(tsd1$x)
 ```
+\hfill\break
 
-TSD Components
-```{r echo=F, warning=F, error=F, message=F}
-tsd1x <- ts(tsd1$x, frequency = 50)
-tsd1components <- decompose(tsd1x)
-plot(tsd1components)
-acf(tsd1x)
+\hfill\break
+Here we can see that the ACF plot is tailing off and the PACF plot is cut off after p=1, So the best suitable model is AR(1)
+\hfill\break
+
+Let us verify with auto.arima
+```{r error=FALSE, message=f,warning=F, echo=FALSE}
+library(forecast)
+auto.arima(tsd1$x)
 ```
+\hfill\break
+So we verify that the model is AR(1)
+\hfill\break
 
-- The plot above shows the original time series (top), the estimated trend component (second from top), the estimated seasonal component (third from top), and the estimated irregular component (bottom).
+Dataset1 : TSD2.txt
+\hfill\break
+```{r echo=F, warning=F, error=F, message=F}
+tsd2 = fread("TSD2.txt") #Read table
+ts.plot(tsd2$x)
+```
+\hfill\break
+
+- Here we can see there is no trend and no seasonal component. Let's now plot acf and pacf
+\hfill\break
+```{r echo=F, warning=F, error=F, message=F}
+acf(tsd2$x)
+pacf(tsd2$x)
+```
+\hfill\break
+
+\hfill\break
+Here we can see that the ACF plot is tailing off and the PACF plot is cut off after p=2, So the best suitable model is AR(2)
+\hfill\break
+
+Let us verify with auto.arima
+```{r error=FALSE, message=f,warning=F, echo=FALSE}
+auto.arima(tsd2$x)
+```
+\hfill\break
+So we verify that the model is AR(2)
+\hfill\break
+
+Dataset1 : TSD3.txt
+\hfill\break
+```{r echo=F, warning=F, error=F, message=F}
+tsd3 = fread("TSD3.txt") #Read table
+ts.plot(tsd3$x)
+```
+\hfill\break
+
+- Here we can see there is no trend and no seasonal component. Let's now plot acf and pacf
+\hfill\break
+```{r echo=F, warning=F, error=F, message=F}
+acf(tsd3$x)
+pacf(tsd3$x)
+```
+\hfill\break
+
+\hfill\break
+Here we can see that the ACF plot cuts off at q=1, So the best suitable model is MA(1)
+\hfill\break
+
+Let us verify with auto.arima
+```{r error=FALSE, message=f,warning=F, echo=FALSE}
+auto.arima(tsd3$x)
+```
+\hfill\break
+So we verify that the model is MA(1)
+\hfill\break
+
+Dataset1 : TSD4.txt
+\hfill\break
+```{r echo=F, warning=F, error=F, message=F}
+library(data.table)
+tsd4 = fread("TSD4.txt") #Read table
+tsd4x <- ts(tsd4$x, frequency = 3)
+plot(decompose(tsd4x))
+```
+\hfill\break
+
+- Here we can see there is no trend and no seasonal component. Let's now plot acf and pacf
+\hfill\break
+```{r echo=F, warning=F, error=F, message=F}
+
+acf(tsd4$x)
+pacf(tsd4$x)
+library(TSA)
+eacf(tsd4$x)
+Box.test(tsd4$x)
+```
+\hfill\break
+
+\hfill\break
+Here we can see that the ACF and pacf plot doesn't give us much thought so we go for a eacf plot and the eacf gives us the model as ARMA(0,0) with box-pierce test giving positive sign, we may also conclude that it is a white noise.
+\hfill\break
+
+Let us verify with auto.arima
+```{r error=FALSE, message=f,warning=F, echo=FALSE}
+auto.arima(tsd4$x)
+```
+\hfill\break
+So we could not verify that the model is ARMA(0,0) as we get it as ARIMA(2,0,1)
+\hfill\break
+
+Dataset1 : TSD5.txt
+\hfill\break
+```{r echo=F, warning=F, error=F, message=F}
+tsd5 = fread("TSD5.txt") #Read table
+ts.plot(tsd5$x)
+```
+\hfill\break
+
+- Here we can see there is no trend and no seasonal component. Let's now plot acf and pacf
+\hfill\break
+```{r echo=F, warning=F, error=F, message=F}
+
+acf(tsd5$x)
+pacf(tsd5$x)
+#library(TSA)
+#eacf(tsd4$x)
+#Box.test(tsd4$x)
+```
+\hfill\break
+
+\hfill\break
+Here we can see that the ACF and pacf plot doesn't give us much thought so we go for a eacf plot and the eacf gives us the model as ARMA(0,0) with box-pierce test giving positive sign, we may also conclude that it is a white noise.
+\hfill\break
+
+Let us verify with auto.arima
+```{r error=FALSE, message=f,warning=F, echo=FALSE}
+auto.arima(tsd5$x)
+```
+\hfill\break
+So we could not verify that the model is ARMA(0,0) as we get it as ARIMA(2,0,1)
+\hfill\break
+<!-- TSD Components -->
+<!-- ```{r echo=F, warning=F, error=F, message=F} -->
+<!-- tsd1x <- ts(tsd1$x, frequency = 50) -->
+<!-- tsd1components <- decompose(tsd1x) -->
+<!-- plot(tsd1components) -->
+<!-- acf(tsd1x) -->
+<!-- ``` -->
+
+<!-- - The plot above shows the original time series (top), the estimated trend component (second from top), the estimated seasonal component (third from top), and the estimated irregular component (bottom). -->
 
 
 
