@@ -1,0 +1,379 @@
+---
+title: "Time Series Assignment"
+author: "Sangamesh"
+
+output: 
+  pdf_document:
+    toc: TRUE
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+#Question 1:
+###Identify the ARIMA(p, d, q) model and the white noise variance estimate for the given data sets. (Use ts.plot, acf, pacf, eacf, arima, etc. Avoid using auto.arima except for verifying your answer.)
+
+```{r}
+# Read all data sets
+
+TSD1 <- read.table("TSD1.txt", stringsAsFactors=FALSE)
+TSD2 <- read.table("TSD2.txt", stringsAsFactors=FALSE)
+TSD3 <- read.table("TSD3.txt", stringsAsFactors=FALSE)
+TSD4 <- read.table("TSD4.txt", stringsAsFactors=FALSE)
+TSD5 <- read.table("TSD5.txt", stringsAsFactors=FALSE)
+TSD6 <- read.table("TSD6.txt", stringsAsFactors=FALSE)
+TSD7 <- read.table("TSD7.txt", stringsAsFactors=FALSE)
+TSD8 <- read.table("TSD8.txt", stringsAsFactors=FALSE)
+TSD9 <- read.table("TSD9.txt", stringsAsFactors=FALSE)
+TSD10 <- read.table("TSD10.txt", stringsAsFactors=FALSE)
+
+summary(TSD1)
+summary(TSD2)
+summary(TSD3)
+summary(TSD4)
+summary(TSD5)
+summary(TSD6)
+summary(TSD7)
+summary(TSD8)
+summary(TSD9)
+summary(TSD10)
+
+as.numeric(TSD1$x)
+as.numeric(TSD2$x)
+as.numeric(TSD3$x)
+as.numeric(TSD4$x)
+as.numeric(TSD5$x)
+as.numeric(TSD6$x)
+as.numeric(TSD7$x)
+as.numeric(TSD8$x)
+as.numeric(TSD9$x)
+as.numeric(TSD10$x)
+```
+
+```{r} 
+#TSD1
+mean1<-mean(TSD1$x)
+sd1<-sd(TSD1$x)
+ts.plot(TSD1)
+acf(TSD1$x)
+pacf(TSD1$x)
+arima(TSD1$x)
+```
+
+```{r}
+#TSD2
+mean2<-mean(TSD2$x)
+sd2<-sd(TSD2$x)
+ts.plot(TSD2)
+acf(TSD2)
+pacf(TSD2)
+arima(TSD2)
+```
+
+```{r}
+#TSD3
+mean3<-mean(TSD3$x)
+sd3<-sd(TSD3$x)
+ts.plot(TSD3)
+acf(TSD3)
+pacf(TSD3)
+arima(TSD3)
+```
+
+```{r}
+#TSD4
+mean4<-mean(TSD4$x)
+sd4<-sd(TSD4$x)
+ts.plot(TSD4)
+acf(TSD4)
+pacf(TSD4)
+arima(TSD4)
+```
+
+```{r}
+#TSD5
+mean5<-mean(TSD5$x)
+sd5<-sd(TSD5$x)
+ts.plot(TSD5)
+acf(TSD5)
+pacf(TSD5)
+arima(TSD5)
+```
+
+```{r}
+#TSD6
+mean6<-mean(TSD6$x)
+sd6<-sd(TSD6$x)
+ts.plot(TSD6)
+acf(TSD6)
+pacf(TSD6)
+arima(TSD6)
+```
+
+```{r}
+#TSD7
+mean7<-mean(TSD7$x)
+sd7<-sd(TSD7$x)
+ts.plot(TSD7)
+acf(TSD7)
+pacf(TSD7)
+arima(TSD7)
+```
+
+```{r}
+#TSD8
+mean8<-mean(TSD8$x)
+sd8<-sd(TSD8$x)
+ts.plot(TSD8)
+acf(TSD8)
+pacf(TSD8)
+arima(TSD8)
+```
+
+```{r}
+#TSD9
+mean9<-mean(TSD9$x)
+sd9<-sd(TSD9$x)
+ts.plot(TSD9)
+acf(TSD9)
+pacf(TSD9)
+arima(TSD9)
+```
+
+```{r}
+#TSD10
+mean10<-mean(TSD10$x)
+sd10<-sd(TSD10$x)
+ts.plot(TSD10)
+acf(TSD10)
+pacf(TSD10)
+arima(TSD10)
+```
+
+
+
+#Question 2:
+###   Simulate a series of n = 500 Gaussian white noise observations as in and compute the sample ACF to lag 20. Compare the sample ACF you obtain to the actual ACF. Now repeat the same by using only n = 50. How does changing n affect the results?
+
+```{r}
+library(ggplot2)
+
+#Population ACF
+
+LAG = c(0:20) # lag up to 20
+acf.p = c(1, rep(0,20)) # population acf (as above)
+ACF.df.p = data.frame(lag = LAG, acf = acf.p) # turn the above into data frame
+
+# n=500 gaussian white noise ACF:
+
+w = rnorm(500,0,1) # n=500 gaussian white noise
+ACF.500 = acf(w, lag.max = 20)
+ACF.500 = acf(w, lag.max = 20, plot = FALSE)
+ACF.df.500 = with(ACF.500, data.frame(lag, acf))
+
+# n=50 gaussian white noise ACF:
+
+w = rnorm(50,0,1) # n=50 gaussian white noise
+ACF.50 = acf(w, lag.max = 20)
+ACF.50 = acf(w, lag.max = 20, plot = FALSE)
+ACF.df.50 = with(ACF.50, data.frame(lag, acf))
+
+#combine the acfs (population, n=500, n=50)
+dat = data.frame(rbind(ACF.df.500, ACF.df.50, ACF.df.p),
+n = c(rep("n=500", 21), rep("n=50", 21), rep("population", 21)))
+
+# comparsion:
+
+ggplot(data = dat, mapping = aes(x = lag, y = acf)) +
+geom_hline(aes(yintercept = 0)) +
+facet_grid(n ~ . )+
+geom_segment(mapping = aes(xend = lag, yend = 0))
+
+```
+
+###As we can see from above comnparison that as the sample size n gets larger the sample autocorrelation function gets close to its popoulation counterpart.
+
+
+#Question 3:
+###Consider the so2 data set, which is part of astsa package. Fit an ARIMA(p, d, q) model to the data, performing all of the necessary diagnostics. After deciding on an appropriate model, forecast the data into the future four time periods ahead (about one month) and calculate 95% prediction intervals for each of the four forecasts.
+
+```{r}
+library(astsa, quietly=TRUE, warn.conflicts=FALSE)
+require(knitr)
+library(ggplot2)
+#Read in the data
+so2
+
+#Convert the data into a time series
+so2 <- ts(so2)
+so2
+
+#plot the data
+plot.ts(so2)
+
+#decomposing non-seasonal data(smoothing)
+library(TTR)
+so2SMA <- SMA(so2, n=8) #moving average of n=8
+plot.ts(so2SMA)
+
+#Forecast:
+so2F <-  HoltWinters(so2, gamma = F)
+so2F
+so2F; so2F$SSE
+plot(so2F) #observed v/s fitted
+
+#Forecast for 4 time periods
+library("forecast")
+so2F2 <- forecast:::forecast.HoltWinters(so2F, h=4)
+so2F2
+plot(forecast(so2F2))
+
+acf(so2F2$residuals, lag.max=20, na.action = na.omit)
+Box.test(so2F2$residuals, lag=20, type='Ljung-Box')
+plot.ts(so2F2$residuals)
+```
+
+## ARIMA model :
+
+```{r}
+#Differencing a time series
+#First differencing
+so2Diff <- diff(so2, differences = 1)
+plot.ts(so2Diff)
+#The time series of first differences (above) does appear to be stationary 
+#in mean and variance, as the level of the series stays roughly constant 
+#over time, and the variance of the series appears roughly constant over time. 
+
+#selecting a candidate ARIMA Model
+# Install the tools
+source(url("http://lib.stat.cmu.edu/general/tsa2/Rcode/itall.R"))
+
+# Plot ACF and PACF
+acf(so2Diff, lag.max=20)            # plot a correlogram
+acf(so2Diff, lag.max=20, plot=FALSE) # get the autocorrelation values
+pacf(so2Diff, lag.max=20)             # plot a partial correlogram
+pacf(so2Diff, lag.max=20, plot=FALSE) # get the partial autocorrelation values
+
+library(forecast)
+auto.arima(so2)
+```
+
+## Forecasting Using an ARIMA Model:
+
+```{r}
+
+so2arima <- arima(so2, order=c(1,1,2)) # fit an ARIMA(1,1,2) model
+so2arima
+
+library("forecast") # load the "forecast" R library
+so2forecasts <- forecast:::forecast.Arima(so2arima, h=4, level=c(95))
+so2forecasts
+plot(forecast(so2forecasts))
+
+```
+
+
+# Question 4:
+### Perform a time series model specification, estimation, model diagnostics, and forecasting for a financial stock of your choice.
+```{r echo=f, message=f, error=f, warning=FALSE}
+library(quantmod);
+library(tseries);
+library(timeSeries);
+library(forecast);
+library(xts);
+
+
+```
+
+```{r echo=f, message=f, error=f, warning=FALSE}
+# Pull data from Yahoo finance 
+getSymbols('MSFT', from='2000-01-01', to='2017-11-01')
+
+# Select the relevant close price series
+stock_prices = MSFT[,4]
+
+
+# Compute the log returns for the stock
+stock = diff(log(stock_prices),lag=1)
+stock = stock[!is.na(stock)]
+
+# Plot log returns 
+plot(stock,type='l', main='log returns plot')
+
+
+# Conduct ADF test on log returns series
+print(adf.test(stock))
+
+# Split the dataset in two parts - training and testing
+breakpoint = floor(nrow(stock)*(2.9/3))
+
+# Apply the ACF and PACF functions
+par(mfrow = c(1,1))
+acf.stock = acf(stock[c(1:breakpoint),], main='ACF Plot', lag.max=100)
+pacf.stock = pacf(stock[c(1:breakpoint),], main='PACF Plot', lag.max=100)
+
+
+# Initialzing an xts object for Actual log returns
+Actual_series = xts(0,as.Date("2017-11-01","%Y-%m-%d"))
+
+# Initialzing a dataframe for the forecasted return series
+forecasted_series = data.frame(Forecasted = numeric())
+
+for (b in breakpoint:(nrow(stock)-1)) {
+  
+  stock_train = stock[1:b, ]
+  stock_test = stock[(b+1):nrow(stock), ]
+  
+  # Summary of the ARIMA model using the determined (p,d,q) parameters
+  fit = arima(stock_train, order = c(2, 0, 2),include.mean=FALSE)
+  #summary(fit)
+  
+  # plotting a acf plot of the residuals
+  #acf(fit$residuals,main="Residuals plot")
+  
+  # Forecasting the log returns
+  arima.forecast = forecast:::forecast.Arima(fit, h = 1,level=99)
+  #summary(arima.forecast)
+  
+  # plotting the forecast
+  #par(mfrow=c(1,1))
+  #plot(arima.forecast, main = "ARIMA Forecast")
+  
+  # Creating a series of forecasted returns for the forecasted period
+  forecasted_series = rbind(forecasted_series,arima.forecast$mean[1])
+  colnames(forecasted_series) = c("Forecasted")
+  
+  # Creating a series of actual returns for the forecasted period
+  Actual_return = stock[(b+1),]
+  Actual_series = c(Actual_series,xts(Actual_return))
+  rm(Actual_return)
+  
+  #print(stock_prices[(b+1),])
+  #print(stock_prices[(b+2),])
+  
+}
+
+# Adjust the length of the Actual return series
+Actual_series = Actual_series[-1]
+
+# Create a time series object of the forecasted series
+forecasted_series = xts(forecasted_series,index(Actual_series))
+```
+
+```{r echo=f, message=f, error=f, warning=FALSE}
+# Create a plot of the two return series - Actual versus Forecasted
+plot(Actual_series,xlim = c(1000,1000),type='l',main='Actual Returns Vs Forecasted Returns')
+lines(forecasted_series,lwd=1.5,col='red')
+legend('topleft',c("Actual","Forecasted"),lty=c(1,1),lwd=c(1.5,1.5),col=c('black','red'))
+
+# Create a table for the accuracy of the forecast
+comparsion = merge(Actual_series,forecasted_series)
+comparsion$Accuracy = sign(comparsion$Actual_series)==sign(comparsion$Forecasted)
+print(comparsion)
+
+# Compute the accuracy percentage metric
+Accuracy_percentage = sum(comparsion$Accuracy == 1)*100/length(comparsion$Accuracy)
+print(Accuracy_percentage)
+```
+
+
