@@ -1,0 +1,121 @@
+---
+title: "Assignment_E"
+author: "Sangamesh"
+date: "3 December 2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Q.1] Consider the Weekly data set, which is part of ISLR package. It contains the weekly stock market returns for 21 years.
+
+a] Produce some numerical and graphical summaries of the Weekly data. Do there appear to be any pattern?
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+library(ISLR)
+data(Weekly)
+summary(Weekly)
+```
+
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+pairs(Weekly)
+```
+\hfill\break
+We can observe that the Weekly data from ISLR has Volume and Year taken together has logarithmic distribution.
+\hfill\break
+
+b] Use the full data set to perform a logistic regression with Direction as the response and the five lag variables plus Volume as predictors. Use the summary function to print the results. Do any of the predictors appears to be statistically significant? If so, which ones?
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+Weeklyglm.fit <- glm(Direction ~ Lag1 + Lag2 + Lag3 + Lag4 + Lag5 + Volume, data=Weekly, family="binomial")
+summary(Weeklyglm.fit)
+```
+\hfill\break
+Statistically significant predictor among the given is Lag2 only since the p-value is greater than the significant code attached to it.
+
+c] Compute the confusion matrix and overall fraction of correct predictions. Explain what the confusion matrix is telling you about the types of mistakes made by logistic regression.
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+Weeklyglm.probs <- predict(Weeklyglm.fit, type="response")
+Weeklyglm.preds <- ifelse(Weeklyglm.probs>.5, "Up", "Down")
+ConfusionMatrixBasic <- table(Weekly$Direction, Weeklyglm.preds)
+print(ConfusionMatrixBasic)
+
+library(caret)
+confusionMatrix(factor(Weekly$Direction), factor(Weeklyglm.preds))
+```
+\hfill\break
+There are a predominance of Up prediction. The model predicts well the Up direction, but it predict poorly the Down direction.
+
+d] Now fit the logistic regression model using a training data period from 1990 to 2008, with Lag2 as the only predictor. Compute the confusion matrix and the overall fraction of correct predictions for the held out data (that is, the data from 2009 and 2010.)
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+trainSetWeekly = (Weekly$Year<=2008)
+testSetWeekly = Weekly[!trainSetWeekly,]
+
+glm.fit.d <- glm(Direction ~ Lag2, data=Weekly, subset=trainSetWeekly, family="binomial")
+glm.probs.d <- predict(glm.fit.d, type="response", newdata=testSetWeekly)
+glm.preds.d <- ifelse(glm.probs.d>.5, "Up", "Down")
+ConfusinMatrixBasic.d <- table(testSetWeekly$Direction, glm.preds.d)
+print(ConfusinMatrixBasic.d)
+
+library(caret)
+confusionMatrix(factor(testSetWeekly$Direction), factor(glm.preds.d))
+```
+\hfill\break
+Overall fraction of correct predictions for the held out data is accuracy is 0.625
+
+e] Repeat (d) using linear discriminant analysis (LDA).
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+library(MASS)
+lda.fit.e <- lda(Direction ~ Lag2, data=Weekly, subset=trainSetWeekly)
+lda.preds.e <- predict(lda.fit.e, newdata=testSetWeekly)
+ConfusinMatrixBasic.e <- table(testSetWeekly$Direction, lda.preds.e$class)
+print(ConfusinMatrixBasic.e)
+
+library(caret)
+confusionMatrix(factor(testSetWeekly$Direction), factor(lda.preds.e$class))
+```
+\hfill\break
+Overall fraction of correct predictions for the held out data is accuracy is 0.625
+
+f] Repeat (d) using quadratic discriminant analysis (QDA).
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+qda.fit.f <- qda(Direction ~ Lag2, data=Weekly, subset=trainSetWeekly)
+qda.preds.f <- predict(qda.fit.f, newdata=testSetWeekly)
+ConfusionMatrixBasic.f <- table(testSetWeekly$Direction, qda.preds.f$class)
+print(ConfusionMatrixBasic.f)
+# ibrary(caret)
+# confusionMatrix(factor(testSetWeekly$Direction), factor(qda.preds.f$class))
+accuracy.f<- (ConfusionMatrixBasic.f["Down", "Down"] + ConfusionMatrixBasic.f["Up", "Up"])/sum(ConfusionMatrixBasic.f)
+print(accuracy.f)
+```
+\hfill\break
+Overall fraction of correct predictions for the held out data is accuracy is 0.5865
+
+g] Repeat (d) using KNN with  =1.
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+library(class)
+set.seed(1)
+train.g = Weekly[trainSetWeekly, c("Lag2", "Direction")]
+knn.pred = knn(train=data.frame(train.g$Lag2), test=data.frame(testSetWeekly$Lag2), cl=train.g$Direction, k=1)
+cm.g <- table(testSetWeekly$Direction, knn.pred)
+print(cm.g)
+accuracy.g <- (cm.g["Down", "Down"] + cm.g["Up", "Up"])/sum(cm.g)
+print(accuracy.g)
+```
+\hfill\break
+Overall fraction of correct predictions for the held out data is accuracy is 0.5865
+
+h] Which of these methods appears to provide the best results on this data?
+\hfill\break
+\hfill\break
+The models from letter d and e, respectively Logistic Regression and LDA
+
+
+
+
+
+
+
+
+
