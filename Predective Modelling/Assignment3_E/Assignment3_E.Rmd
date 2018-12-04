@@ -1,8 +1,11 @@
 ---
-title: "Assignment_E"
+title: "Assignment3_E"
 author: "Sangamesh"
 date: "3 December 2018"
-output: pdf_document
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -98,9 +101,9 @@ library(class)
 set.seed(1)
 train.g = Weekly[trainSetWeekly, c("Lag2", "Direction")]
 knn.pred = knn(train=data.frame(train.g$Lag2), test=data.frame(testSetWeekly$Lag2), cl=train.g$Direction, k=1)
-cm.g <- table(testSetWeekly$Direction, knn.pred)
-print(cm.g)
-accuracy.g <- (cm.g["Down", "Down"] + cm.g["Up", "Up"])/sum(cm.g)
+ConfusionMatrixBasic.g <- table(testSetWeekly$Direction, knn.pred)
+print(ConfusionMatrixBasic.g)
+accuracy.g <- (ConfusionMatrixBasic.g["Down", "Down"] + ConfusionMatrixBasic.g["Up", "Up"])/sum(ConfusionMatrixBasic.g)
 print(accuracy.g)
 ```
 \hfill\break
@@ -109,13 +112,176 @@ Overall fraction of correct predictions for the held out data is accuracy is 0.5
 h] Which of these methods appears to provide the best results on this data?
 \hfill\break
 \hfill\break
-The models from letter d and e, respectively Logistic Regression and LDA
+The models from letter d and e, respectively Logistic Regression and LDA.
+\hfill\break
+\hfill\break
+\hfill\break
 
+Q.2] This problem involves predicting Salary from the Hitters data set which is part of the
+ISLR package.
 
+a] Remove the observations for whom the salary information is unknown, and then log-transform the salaries.
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+library(ISLR)
+summary(Hitters)
+Hitters <- na.omit(Hitters)
+Hitters$Salary <- log(Hitters$Salary)
+```
+\hfill\break
 
+b] Create a training set consisting of the first 200 observations, and a test set consisting
+of the remaining observations.
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+trainHitters <- 1:200
+Hitters.train <- Hitters[trainHitters, ]
+Hitters.test <- Hitters[-trainHitters, ]
+print("Training data head: ")
+print(head(Hitters.train))
+print("Test data head: ")
+print(head(Hitters.test))
+```
+\hfill\break
 
+c] Perform boosting on the training set with 1000 trees for a range of values of the shrinkage parameter lambda. Produce a plot with different shrinkage values on the x-axis and the corresponding training set MSE on the y-axis.
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+library(gbm)
+set.seed(1)
+pows <- seq(-10, -0.2, by = 0.1)
+lambdas <- 10^pows
+train.err <- rep(NA, length(lambdas))
+for (i in 1:length(lambdas)) {
+    boost.hitters <- gbm(Salary ~ ., data = Hitters.train, distribution = "gaussian", n.trees = 1000, shrinkage = lambdas[i])
+    pred.train <- predict(boost.hitters, Hitters.train, n.trees = 1000)
+    train.err[i] <- mean((pred.train - Hitters.train$Salary)^2)
+}
+plot(lambdas, train.err, type = "b", xlab = "Shrinkage values", ylab = "Training MSE")
+```
+\hfill\break
+We observe, as shrinkage value increases the training MSE value exponentially decreases.
+\hfill\break
 
+d] Produce a plot with different shrinkage values on the x-axis and the corresponding test set MSE on the y-axis.
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+set.seed(1)
+test.err <- rep(NA, length(lambdas))
+for (i in 1:length(lambdas)) {
+    boost.hitters <- gbm(Salary ~ ., data = Hitters.train, distribution = "gaussian", n.trees = 1000, shrinkage = lambdas[i])
+    yhat <- predict(boost.hitters, Hitters.test, n.trees = 1000)
+    test.err[i] <- mean((yhat - Hitters.test$Salary)^2)
+}
+plot(lambdas, test.err, type = "b", xlab = "Shrinkage values", ylab = "Test MSE")
+minMSEtest <- min(test.err)
+lambdaMinMSEtest <- lambdas[which.min(test.err)]
+print(paste("The minimum test MSE is ", minMSEtest, " , and is obtained for lambda =", lambdaMinMSEtest))
+```
+\hfill\break
 
+e] Which variable appear to be the most important predictors in the boosted model?
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+library(gbm)
+boost.hitters <- gbm(Salary ~ ., data=Hitters.train, distribution = "gaussian", n.trees = 1000, shrinkage = lambdas[which.min(test.err)])
+```
+```{r echo=FALSE, message=FALSE, error=F, warning=F}
+summary(boost.hitters)
+```
+\hfill\break
+We see that CAtBat is most important variable in all the variables list, relatively. Also, relative influence of Walks is found to be highest.
+\hfill\break
 
+f] Apply bagging to the training set. What is the test set MSE for this approach.
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+library(randomForest)
+set.seed(1)
+bag.hitters <- randomForest(Salary ~ ., data = Hitters.train, mtry = 19, ntree = 500)
+yhat.bag <- predict(bag.hitters, newdata = Hitters.test)
+MSEbag <- mean((yhat.bag - Hitters.test$Salary)^2)
+print(paste0("The test MSE for bagging is ", MSEbag  ,", which is slightly lower than the test MSE for boosting."))
+```
+\hfill\break
 
+g] Apply random forests to the training set. What is the test set MSE for this approach.
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+library(randomForest)
+set.seed(1)
+rf.hitters <- randomForest(Salary ~ ., data = Hitters.train, ntree = 500)
+yhat.rf <- predict(rf.hitters, newdata = Hitters.test)
+MSErf <- mean((yhat.rf - Hitters.test$Salary)^2)
+print(paste0("The test MSE for Random Forest is ", MSErf  ,", which is slightly lower than the test MSE for boosting."))
+```
+\hfill\break
+
+Q.3] Generate a simulated two-class data set with 100 observations and two features in which there is a visible but non-linear seperation between the classes. Show that in this setting, a support vector machine with a polynomial kernal (with degree greater than 1) or a radial kernal will outperform a support vector classifier on the training data. Which technique performs best on the test data? Make plots and report training and test error rates in order to back up your assertions.
+```{r echo=FALSE, message=FALSE, error=F, warning=F}
+library(e1071)
+set.seed(1)
+x <- rnorm(100)
+y <- 4 * x^2 + 1 + rnorm(100)
+class <- sample(100, 50)
+# print(y[class])
+y[class] <- y[class] + 3 # Adding 3 
+# print(y[class])
+y[-class] <- y[-class] - 3 # Subtracting 3 so that the non-linear seperation between the classes is visible
+plot(x[class], y[class], col = "red", xlab = "X", ylab = "Y", ylim = c(-6, 30))
+points(x[-class], y[-class], col = "blue")
+```
+\hfill\break
+We can clearly see the seperation between two classes - Non linear
+\hfill\break
+Now, we fit a support vector classifier on the training data
+```{r echo=FALSE, message=FALSE, error=F, warning=F}
+z <- rep(-1, 100)
+z[class] <- 1
+data <- data.frame(x = x, y = y, z = as.factor(z))
+train <- sample(100, 50)
+data.train <- data[train, ]
+data.test <- data[-train, ]
+svm.linear <- svm(z ~ ., data = data.train, kernel = "linear", cost = 10)
+plot(svm.linear, data.train)
+```
+
+```{r echo=FALSE, message=FALSE, error=F, warning=F}
+table(predict = predict(svm.linear, data.train), truth = data.train$z)
+```
+\hfill\break
+  The support vector classifier makes 6 errors on the training data. Next, we fit a support vector machine with a polynomial kernel.
+\hfill\break
+```{r echo=FALSE, message=FALSE, error=F, warning=F}
+svm.poly <- svm(z ~ ., data = data.train, kernel = "polynomial", cost = 10)
+plot(svm.poly, data.train)
+table(predict = predict(svm.poly, data.train), truth = data.train$z)
+```
+\hfill\break
+
+The support vector machine with a polynomial kernel of degree 3 makes 9 errors on the training data.
+
+Finally, we fit a support vector machine with a radial kernel and a gamma of 1.
+```{r echo=FALSE, message=FALSE, error=F, warning=F}
+svm.radial <- svm(z ~ ., data = data.train, kernel = "radial", gamma = 1, cost = 10)
+plot(svm.radial, data.train)
+table(predict = predict(svm.radial, data.train), truth = data.train$z)
+```
+\hfill\break
+The support vector machine with a radial kernel makes 0 error on the training data.
+
+Now, we check how these models fare when applied to the test data.
+```{r echo=FALSE, message=FALSE, error=F, warning=F}
+plot(svm.linear, data.test)
+table(predict = predict(svm.linear, data.test), truth = data.test$z)
+```
+
+```{r echo=FALSE, message=FALSE, error=F, warning=F}
+plot(svm.poly, data.test)
+table(predict = predict(svm.poly, data.test), truth = data.test$z)
+```
+
+```{r echo=FALSE, message=FALSE, error=F, warning=F}
+plot(svm.radial, data.test)
+table(predict = predict(svm.radial, data.test), truth = data.test$z)
+```
+\hfill\break
+We may see that the linear, polynomial and radial support vector machines classify respectively 9, 6 and 1 observations incorrectly. So, radial kernel is the best model in this setting.
+
+```{r}
+# Published assignment can be found at https://rpubs.com/SangamKotalwar/Assignment3_E
+```
 
