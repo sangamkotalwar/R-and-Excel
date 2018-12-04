@@ -1,0 +1,199 @@
+---
+title: "Assignment_C"
+author: "Sangamesh"
+date: "4 December 2018"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Q.1] 1. Perform the following steps and comment on the observation.
+
+Step I. Generate one U(-100,100) random number. Call it m
+```{r echo=F, message=FALSE, warning=FALSE, error=FALSE}
+set.seed(1)
+m <- floor(runif(1, -100, 100))
+print(paste0("m = ", m))
+```
+\hfill\break
+Step II. Generate one U(10,50) random number. Call it s.
+```{r echo=F, message=FALSE, warning=FALSE, error=FALSE}
+set.seed(1)
+s <- floor(runif(1, 10, 50))
+print(paste0("s = ", s))
+```
+\hfill\break
+Step III. Generate one U(10,25) random number. Call it n.
+```{r echo=F, message=FALSE, warning=FALSE, error=FALSE}
+set.seed(1)
+n <- floor(runif(1, 10, 25))
+print(paste0("n = ", n))
+```
+\hfill\break
+
+Step IV. Generate 1000 N(m,s) random numbers. Call this the population.
+```{r echo=F, message=FALSE, warning=FALSE, error=FALSE}
+set.seed(1)
+population <- rnorm(1000, m, s)
+print(head(population))
+```
+\hfill\break
+
+Step V. Sample n numbers without replacement from the population.
+```{r echo=F, message=FALSE, warning=FALSE, error=FALSE}
+set.seed(1)
+sample <- sample(population, n, replace = FALSE)
+print(paste("Head of sample: ", sample))
+```
+\hfill\break
+
+Step VI. Construct 90%, 95%, and 99% confidence intervals for the population mean.
+```{r echo=F, message=FALSE, warning=FALSE, error=FALSE}
+library(BSDA)
+ninty <- z.test(population, sigma.x = s, conf.level = 0.90)
+print("For 90% interval: ")
+print(ninty)
+
+nintyFive <- z.test(population, sigma.x = s, conf.level = 0.95)
+print("For 95% interval: ")
+print(nintyFive)
+
+nintyNine <- z.test(population, sigma.x = s, conf.level = 0.99)
+print("For 99% interval: ")
+print(nintyNine)
+```
+\hfill\break
+
+Step VII. Construct 90%, 95%, and 99% confidence intervals for the population variance.
+```{r echo=F, message=FALSE, warning=FALSE, error=FALSE}
+library(EnvStats)
+df <- length(population) - 1
+print(paste("degree of freedom = ", df))
+varPopulation <- var(population)
+print(paste0("Population variance = ", varPopulation))
+
+print("For 90% interval: ")
+print(varTest(population, conf.level = 0.9, sigma.squared = s))
+
+print("For 95% interval: ")
+# lowerNintyFive = varPopulation * df / qchisq(0.05/2, df, lower.tail = FALSE)
+# upperNintyFive = varPopulation * df / qchisq(1 - 0.05/2, df, lower.tail = FALSE)
+# print(c(lower = lowerNintyFive, variance = varPopulation, upper = upperNintyFive))
+print(varTest(population, conf.level = 0.95, sigma.squared = s))
+
+print("For 99% interval: ")
+print(varTest(population, conf.level = 0.99, sigma.squared = s))
+```
+\hfill\break
+
+Step VIII. Repeat steps V & VI 100/500/1000 times and count the number of times (and percentage) that the population mean is captured by the confidence interval.
+```{r echo=F, message=FALSE, warning=FALSE, error=FALSE}
+draws = matrix(rnorm(floor(n) * 100, m, sqrt(s)), n)
+get.conf.int = function(x) t.test(x)$conf.int
+conf.int = apply(draws, 2, get.conf.int)
+count = sum(conf.int[1, ] <= m & conf.int[2, ] >= m)
+percentage = count/100 * 100
+paste("For n=100: Count = ", count, ", Percentage = ", percentage, "%")
+
+draws = matrix(rnorm(floor(n) * 500, m, sqrt(s)), n)
+get.conf.int = function(x) t.test(x)$conf.int
+conf.int = apply(draws, 2, get.conf.int)
+count = sum(conf.int[1, ] <= m & conf.int[2, ] >= m)
+percentage = count/500 * 100
+paste("For n=500: Count = ", count, ", Percentage = ", percentage, "%")
+
+draws = matrix(rnorm(floor(n) * 1000, m, sqrt(s)), n)
+get.conf.int = function(x) t.test(x)$conf.int
+conf.int = apply(draws, 2, get.conf.int)
+count = sum(conf.int[1, ] <= m & conf.int[2, ] >= m)
+percentage = count/1000 * 100
+paste("For n=1000: Count = ", count, ", Percentage = ", percentage, "%")
+```
+\hfill\break
+
+Step IX. Repeat steps V & VII 100/500/1000 times and count the number of times (and percentage) that the population variance is captured by the confidence interval.
+```{r echo=F, message=FALSE, warning=FALSE, error=FALSE}
+draws = matrix(rnorm(floor(n) * 100, m, sqrt(s)), n)
+get.conf.int = function(x) varTest(x, conf.level = 0.95, sigma.squared = s)$conf.int
+conf.int = apply(draws, 2, get.conf.int)
+count = sum(conf.int[1, ] <= m & conf.int[2, ] >= m)
+percentage = count/100 * 100
+paste("For n=100: Count = ", count, ", Percentage = ", percentage, "%")
+
+draws = matrix(rnorm(floor(n) * 500, m, sqrt(s)), n)
+get.conf.int = function(x) varTest(x, conf.level = 0.95, sigma.squared = s)$conf.int
+conf.int = apply(draws, 2, get.conf.int)
+count = sum(conf.int[1, ] <= m & conf.int[2, ] >= m)
+percentage = count/500 * 100
+paste("For n=500: Count = ", count, ", Percentage = ", percentage, "%")
+
+draws = matrix(rnorm(floor(n) * 1000, m, sqrt(s)), n)
+get.conf.int = function(x) varTest(x, conf.level = 0.95, sigma.squared = s)$conf.int
+conf.int = apply(draws, 2, get.conf.int)
+count = sum(conf.int[1, ] <= m & conf.int[2, ] >= m)
+percentage = count/1000 * 100
+paste("For n=1000: Count = ", count, ", Percentage = ", percentage, "%")
+```
+\hfill\break
+
+Q.2] In a filament cut test, a razor blade was tested six different times with ultimate forces corresponding to 8.5, 13.9, 7.4, 10.3, 15.7, 4.0.
+ 
+a] find 95% confidence interval on mean using standard t-distribution
+```{r echo=F, message=FALSE, warning=FALSE, error=FALSE}
+forces <- c(8.5, 13.9, 7.4, 10.3, 15.7, 4.0)
+forcesNintyFive <- t.test(forces, sigma.x = sd(forces), conf.level = 0.95)
+print("For 95% interval: ")
+print(forcesNintyFive)
+```
+\hfill\break
+b] Find a 95% confidence interval on the mean using Efron's percentile method.
+```{r echo=F, message=FALSE, warning=FALSE, error=FALSE}
+library(boot)
+fboot <- function(x, i) mean(x[i])
+bs <- boot(forces, fboot, R=1000)
+efronForcesPerc <- boot.ci(bs, conf=0.95, type="perc")
+print(efronForcesPerc)
+```
+\hfill\break
+
+c] Find a 95% confidence interval on the mean using the BCa method and the ABC method.
+```{r echo=F, message=FALSE, warning=FALSE, error=FALSE}
+library(boot)
+fbootBCa <- function(x, i) mean(x[i])
+bsBCa <- boot(forces, fbootBCa, R=1000)
+efronForcesBCa <- boot.ci(bsBCa, conf=0.95, type="bca")
+print("BCa test")
+print(efronForcesBCa)
+
+print("ABC test")
+fabc <- function(x, w) w%*%x
+efronForcesABC <- abc.ci(forces, fabc, conf =0.95)
+print(efronForcesABC)
+```
+\hfill\break
+
+d] Find a 95% confidence interval on the mean using the percentile-t method.
+```{r echo=F, message=FALSE, warning=FALSE, error=FALSE}
+library(resample)
+bootC <- bootstrap(forces, mean, seed = 0)
+percentileForces <- CI.percentile(bootC, probs = c(0.025, 0.975))
+# percentileForces <- CI.percentile(bootC, probs = c(0.95))
+print("percentile-t  test:")
+print(percentileForces)
+```
+\hfill\break
+
+```{r echo=F, message=FALSE, warning=FALSE, error=FALSE}
+```
+
+```{r echo=F, message=FALSE, warning=FALSE, error=FALSE}
+```
+
+```{r echo=F, message=FALSE, warning=FALSE, error=FALSE}
+```
+
