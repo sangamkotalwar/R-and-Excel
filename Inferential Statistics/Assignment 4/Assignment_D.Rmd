@@ -1,0 +1,89 @@
+---
+title: "Assignment"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#1. Question 1
+
+```{r s, echo=FALSE}
+sample = c(4.94, 5.06, 4.53, 5.07, 4.99, 5.16, 4.38, 4.43, 4.93, 4.72, 4.92, 4.96)
+```
+
+#a) Part a)
+
+
+```{r a, echo=FALSE}
+library(boot)
+sample.mean<-function(data,x){
+    mean(data[x])
+}
+
+boot_obj = boot(sample, sample.mean, R=1000)
+boot.ci(boot_obj, conf = 0.90, type="perc")
+```
+
+#b) Part b)
+
+```{r b, echo=FALSE}
+boot.ci(boot_obj, conf = 0.95, type="perc")
+```
+
+
+#c) Part c)
+
+```{r c, echo=FALSE}
+z = (mean(sample) - 5.7)/(sd(sample)/sqrt(length(sample)))
+2*pnorm(-abs(z))
+```
+
+#Result:
+
+- Since P-value < 0.05, so reject null hypothesis.
+
+
+
+#2. Question 2
+
+#a) Part a)
+
+```{r 2a, echo=FALSE}
+recall = 123/(123+27)
+precision = 123/(123+625)
+figureOfMerit = (precision*recall)/(0.8*precision + 0.2*recall)
+```
+
+(b) Resample the 2 × 2 contingency table B = 1000 times. (Hint: Use the multinomial
+distribution and rmultinom() in R.)
+
+->
+```{r contingency resample}
+Relevant_true <- c(123,27)
+Irrelevant_true <- c(625,6703)
+total_relevant_doc <- 150
+total_irrelevant_doc <- 7328
+Relevant_true <- rmultinom(1000, total_relevant_doc, Relevant_true)
+Irrelevant_true <- rmultinom(1000, total_irrelevant_doc, Irrelevant_true)
+```
+
+\hfill\break  
+(c) Find 90% and 95% confidence intervals for the true F2 for the complete database using Efron's percentile method.
+
+->
+The 90% confidence interval for F2 of database is: 
+```{r contingency CI 90%, echo=FALSE}
+f2.boot <- c()
+for(i in 1:1000)
+  {
+    p = Relevant_true[1,i]/(Relevant_true[1,i] + Irrelevant_true[1,i])
+    r = Relevant_true[1,i]/150
+    f_merit = p*r/(0.8*p + 0.2*r)
+    f2.boot <- c(f2.boot, f_merit)
+}
+quantile(f2.boot,probs = c(0.05,0.95))
+```
