@@ -1,0 +1,642 @@
+---
+title: |
+  | Inferential Statistics for Data Science
+  | DS412
+  | Kotalwar Sangamesh
+  | U101115FCS210
+  | Course in-charge: Prof. Suman Sanyal
+output:
+  pdf_document:
+    fig_caption: yes
+    number_sections: yes
+  html_document:
+    df_print: paged
+header-includes:
+- \usepackage{titling}
+- \pretitle{\begin{center}\LARGE\includegraphics[width=12cm]{logo.png}\\[\bigskipamount]}
+- \posttitle{\end{center}}
+---
+\newpage
+\tableofcontents
+\newpage
+
+#Acknowledgement
+I'm highly indebted to Prof. Suman Sanyal for his guidance and constant supervision as well as for providing necessary information regarding the assignments.
+&nbsp;
+
+I acknowledge that any work that I submit for assessment at NIIT University:
+&nbsp;
+
+1. Must be all my own work.
+&nbsp;
+
+2. Must not have been prepared with the assistance of any other person, except those permitted within University guidelines or the specific assessment guidelines for the piece of work.
+&nbsp;
+
+3. Has not previously been submitted for assessment at this University or elsewhere.
+
+
+\newpage
+
+&nbsp;
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r wrap-hook, echo =FALSE}
+library(knitr)
+hook_output = knit_hooks$get('output')
+knit_hooks$set(output = function(x, options) {
+  # this hook is used only when the linewidth option is not NULL
+  if (!is.null(n <- options$linewidth)) {
+    x = knitr:::split_lines(x)
+    # any lines wider than n should be wrapped
+    if (any(nchar(x) > n)) x = strwrap(x, width = n)
+    x = paste(x, collapse = '\n')
+  }
+  hook_output(x, options)
+})
+```
+
+#Assignment A
+
+##Q.1] How close is the average of the samples to the expected value of X?
+
+
+Calculating the Sample mean and draw it's histogram:
+```{r x ,echo=FALSE}
+inv_cdf <- function(u){k <- (1/u)^(1/3)}
+u <- runif(1000, min=0, max=1)
+x <- inv_cdf(u)
+#x
+```
+
+```{r SampleMeanX,echo=FALSE}
+hist(x)
+SampleMeanX <- mean(x)
+```
+Sample mean of X is:
+```{r,echo=FALSE}
+print(SampleMeanX)
+```
+Calculating Expected value of the distribution:
+```{r expectedX,echo=FALSE}
+f1 <- function(x)(3/x^3)
+expectedX = integrate(f1, 1, Inf)
+```
+Expected value of X is:
+```{r,echo=FALSE}
+print(expectedX)
+```
+Difference between sample mean and expected value of X is:
+```{r,echo=FALSE}
+Difference <- SampleMeanX - 1.5
+print(Difference)
+```
+Inference : The difference between the sample mean and expected value is nearly 0.
+
+##Q.2] 2-D The volume of a d-dimensional unit ball
+
+
+```{r,echo=FALSE}
+xv <- (1:100)
+fv <- ((pi^(xv/2))/ gamma((xv/2)+1))*1^xv
+#print(fv)
+plot(xv,fv,type='h')
+```
+Observation: if the limit as d goes to infinity, the volume of the ball goes to zero.
+
+##Q.3] 2-D The surface area of a d-dimensional unit ball
+
+
+```{r,echo=FALSE}
+xsa <- (1:50)
+fsa <- (2*(pi ^(xsa/2))/ gamma(xsa/2))
+#print(fsa)
+plot(xsa,fsa,type='h')
+```
+Observation: if the limit as d goes to infinity, the surface area of the ball goes to zero.
+
+##Q.4] 3-D The volume of a d-dimensional unit ball
+
+```{r,echo=FALSE}
+r <- (1:10)
+d <- (1:10)
+f1 <- function(r,d)((pi^(d/2))/ gamma((d/2)+1))*r^d
+z <- outer(r,d,f1)
+persp(r,d,z,theta=30, phi=30, expand = 0.5, col="lightblue")
+```
+Observation: if the limit as d and r goes to z, the volume of the ball goes to zero.
+
+##Q.5] 3-D The surface area of a d-dimensional unit ball
+
+```{r,echo=FALSE}
+rsa <- (1:10)
+dsa <- (1:10)
+fsa <- function(rsa, dsa){(2*(pi ^(dsa/2))/ gamma(dsa/2))*(rsa^dsa)}
+zsa <- outer(rsa,dsa,fsa)
+persp(rsa,dsa,zsa,theta=30, phi=30, expand = 0.5, col="lightblue")
+```
+Observation: if the limit as d and r goes to infinity, the surface area of the ball goes to zero.
+
+
+##Q.6] Calculate distance
+
+```{r sphere, echo = FALSE}
+library(hitandrun)
+
+sample <- hypersphere.sample(900, 20)
+fin_sample <- 30*sample
+```
+
+```{r distance, echo = FALSE}
+d <- dist(fin_sample,method = "euclidean")
+```
+
+```{r function, echo = FALSE}
+scaling <- function(d,ndim){
+  fit <- cmdscale(d, eig = FALSE, k = ndim)
+  d_new <- dist(fit)
+  diff <- (((k^0.5)*d) - d_new)
+  print(paste("Subspace of dimension:",k))
+  print(max(diff))
+}
+```
+
+The differences in euclidean distances for the subspace projection is as follows:
+```{r 1dim,echo = FALSE}
+k = 1
+scaling(d,k)
+```
+
+```{r 2dim,echo = FALSE}
+k = 2
+scaling(d,k)
+```
+
+```{r 3dim,echo = FALSE}
+k = 3
+scaling(d,k)
+```
+
+```{r 4dim,echo = FALSE}
+k = 4
+scaling(d,k)
+```
+
+```{r 5dim,echo = FALSE}
+k = 5
+scaling(d,k)
+```
+
+```{r 10dim,echo = FALSE}
+k = 10
+scaling(d,k)
+```
+
+Observation : As we decrease the dimension, the differences in euclidean distances for the subspace projection decreases.
+
+
+[Attached File for code](https://drive.google.com/file/d/1yB7lo8myCUKfkqiwbj0dqArPmtGiqCwt/view?usp=sharing)
+
+\newpage
+
+#Assignment B
+**The app can be run on cloud [here!](https://sangamkotalwar.shinyapps.io/Assignmnet_2Final/)**
+```{r echo=T, eval=FALSE}
+library(shiny)
+# Define UI for application that draws a histogram
+ui <- fluidPage(
+  tags$head(
+    tags$style(HTML("
+                    .mg-histogram .mg-bar rect {
+                    fill: #75AADB;
+                    shape-rendering: auto;
+                    }
+                    .mg-histogram .mg-bar  {
+                    fill: #75AADB;
+                    shape-rendering: auto;
+                    }
+                    
+                    
+                    .mg-histogram .mg-bar rect.active {
+                    fill: #ffa500;
+                    }"))),
+  
+  # Sidebar with a slider input for number of bins 
+  sidebarLayout(
+    sidebarPanel(   selectInput("typee","Select the type of distribution",c("Uniform Distribution"="unii","Normal Distribution"="normm","Exponential Distribution"="expp"),selected = "Unifrom Distribution"),
+                    selectInput("sele","Replacement",c("Yes"="yess","No"="noo")),
+                    
+                    sliderInput("numb",
+                                "Number of Samples:",
+                                min = 20,
+                                max = 100,
+                                value = 20),
+                    sliderInput("unimin",
+                                "Enter the Minimum Value for for Uniform Distibution: ",
+                                min = 1,
+                                max = 99,
+                                value = 1),
+                    sliderInput("unimax",
+                                "Enter the Maximum Value for Uniform Distibution: ",
+                                min = 2,
+                                max = 100,
+                                value = 100),
+                    sliderInput("meann",
+                                "Enter the Mean for Normal Distibution: ",
+                                min = 0,
+                                max = 50,
+                                value = 10),
+                    sliderInput("stddev",
+                                "Enter the Standard Deviation for Normal Distibution: ",
+                                min = 0,
+                                max = 50,
+                                value = 10),
+                    
+                    sliderInput("exprate",
+                                "Enter the Rate for Exponential Distibution: ",
+                                min = 1,
+                                max = 100,
+                                value = 1),
+                    tags$div(class="header", checked=NA,
+                             tags$p("Check the deployed version here:"),
+                             tags$a(href="https://sangamkotalwar.shinyapps.io/Assignmnet_2Final/", "Click Here!")
+                    )
+    ),
+    
+    
+    # Show a plot of the generated distribution
+    mainPanel(
+      plotOutput("plot",brush = brushOpts(id = "plot_brush"),hover = hoverOpts(id = "plot_hover"))
+    )
+  )
+    )
+
+# Define server logic required to draw a histogram
+server <- function(input, output) {
+  d <- reactive({
+    
+    sele <- switch(input$sele,
+                   noo = TRUE,
+                   yess = FALSE,
+                   TRUE)
+    disttt<-switch(input$typee,
+                   unii=sample(input$unimin:input$unimax,input$numb,replace = sele),
+                   normm=rnorm(input$numb,mean=input$meann,sd=input$stddev),
+                   expp=rexp(input$numb,input$exprate),
+                   sample(input$unimin:input$unimax,input$numb,replace = sele)
+    )
+
+  })
+  faa<- reactive({
+    disttt<-switch(input$typee,
+                   unii="Uniform Distribution of ",
+                   normm="Normal Distribution of ",
+                   expp="Exponential Distribution of ",
+                   "Uniform Distribution of "
+    )
+  })
+  dkk<-reactive({
+
+    if( is.null(input$plot_brush$xmax) && is.null(input$plot_hover$x)) 
+      color="blue"
+    else if(!is.null(input$plot_hover$x))
+    {
+      color=dkkb2()
+    }
+    else if( !is.null(input$plot_brush$xmax) && is.null(input$plot_hover$x)) 
+    {
+      color=dkkb()
+    }
+    
+    else color=dkkb()
+  })
+  
+  dkkb<-reactive({
+    color="blue"
+    flag=1
+    i=1
+    differe =((max(d())-min(d()))/10)
+    check=min(d())
+    while(i<11)
+    {  
+      if (check>(input$plot_brush$xmax))
+      {
+        flag=2
+      }
+      if(((input$plot_brush$xmin-differe)<check) && (flag==1))
+      {
+        color[[i]]<-"orange"
+      }  
+      else{
+        color[[i]]<-"blue"
+      }
+      i=i+1
+      check=check+differe
+    }
+    check=min(d())
+    
+    
+    return(color)
+  })
+  dkk2<-reactive({
+
+    if( is.null(input$plot_hover$x) ) 
+    {
+      color="blue"
+    }
+    else
+      color=dkkb2()
+    
+  })
+  dkkb2<-reactive({
+    color=c("blue","blue","blue","blue","blue","blue","blue","blue","blue","blue")
+    abcc=(as.integer((input$plot_hover$x-  min(d()))*10  / (max(d())-min(d()) ))+1)
+    color[[abcc]]="orange"
+    return(color)
+    #print(color)
+  })
+
+  output$plot <- renderPlot({
+    dist <- input$dist
+    n <- input$numb
+    minv=min(d())
+    maxv=max(d())
+    hist(d(),breaks=seq(minv,maxv,l=11),main = paste(faa(),n, " Random Variables", sep = ""),col = dkk(), border = "white")
+  })
+}
+
+# Run the application 
+shinyApp(ui = ui, server = server)
+
+
+#The app can be run on cloud at https://sangamkotalwar.shinyapps.io/Assignmnet_2Final/
+```
+**The app can be run on cloud [here!](https://sangamkotalwar.shinyapps.io/Assignmnet_2Final/)**
+\newpage
+
+#Assignment C
+
+##Q.1] 1. Perform the following steps and comment on the observation.
+
+###Step I. Generate one U(-100,100) random number. Call it m
+```{r echo=F, message=FALSE, warning=FALSE, error=FALSE}
+set.seed(1)
+m <- floor(runif(1, -100, 100))
+print(paste0("m = ", m))
+```
+\hfill\break
+###Step II. Generate one U(10,50) random number. Call it s.
+```{r echo=F, message=FALSE, warning=FALSE, error=FALSE}
+set.seed(1)
+s <- floor(runif(1, 10, 50))
+print(paste0("s = ", s))
+```
+\hfill\break
+###Step III. Generate one U(10,25) random number. Call it n.
+```{r echo=F, message=FALSE, warning=FALSE, error=FALSE}
+set.seed(1)
+n <- floor(runif(1, 10, 25))
+print(paste0("n = ", n))
+```
+\hfill\break
+
+###Step IV. Generate 1000 N(m,s) random numbers. Call this the population.
+```{r echo=F, message=FALSE, warning=FALSE, error=FALSE}
+set.seed(1)
+population <- rnorm(1000, m, s)
+print(head(population))
+```
+\hfill\break
+
+###Step V. Sample n numbers without replacement from the population.
+```{r echo=F, message=FALSE, warning=FALSE, error=FALSE}
+set.seed(1)
+sample <- sample(population, n, replace = FALSE)
+print(paste("Head of sample: ", sample))
+```
+\hfill\break
+
+###Step VI. Construct 90%, 95%, and 99% confidence intervals for the population mean.
+```{r echo=F, message=FALSE, warning=FALSE, error=FALSE}
+library(BSDA)
+ninty <- z.test(population, sigma.x = s, conf.level = 0.90)
+print("For 90% interval: ")
+print(ninty)
+
+nintyFive <- z.test(population, sigma.x = s, conf.level = 0.95)
+print("For 95% interval: ")
+print(nintyFive)
+
+nintyNine <- z.test(population, sigma.x = s, conf.level = 0.99)
+print("For 99% interval: ")
+print(nintyNine)
+```
+\hfill\break
+
+###Step VII. Construct 90%, 95%, and 99% confidence intervals for the population variance.
+```{r echo=F, message=FALSE, warning=FALSE, error=FALSE}
+library(EnvStats)
+df <- length(population) - 1
+print(paste("degree of freedom = ", df))
+varPopulation <- var(population)
+print(paste0("Population variance = ", varPopulation))
+
+print("For 90% interval: ")
+print(varTest(population, conf.level = 0.9, sigma.squared = s))
+
+print("For 95% interval: ")
+# lowerNintyFive = varPopulation * df / qchisq(0.05/2, df, lower.tail = FALSE)
+# upperNintyFive = varPopulation * df / qchisq(1 - 0.05/2, df, lower.tail = FALSE)
+# print(c(lower = lowerNintyFive, variance = varPopulation, upper = upperNintyFive))
+print(varTest(population, conf.level = 0.95, sigma.squared = s))
+
+print("For 99% interval: ")
+print(varTest(population, conf.level = 0.99, sigma.squared = s))
+```
+\hfill\break
+
+###Step VIII. Repeat steps V & VI 100/500/1000 times and count the number of times (and percentage) that the population mean is captured by the confidence interval.
+```{r echo=F, message=FALSE, warning=FALSE, error=FALSE}
+draws = matrix(rnorm(floor(n) * 100, m, sqrt(s)), n)
+get.conf.int = function(x) t.test(x)$conf.int
+conf.int = apply(draws, 2, get.conf.int)
+count = sum(conf.int[1, ] <= m & conf.int[2, ] >= m)
+percentage = count/100 * 100
+paste("For n=100: Count = ", count, ", Percentage = ", percentage, "%")
+
+draws = matrix(rnorm(floor(n) * 500, m, sqrt(s)), n)
+get.conf.int = function(x) t.test(x)$conf.int
+conf.int = apply(draws, 2, get.conf.int)
+count = sum(conf.int[1, ] <= m & conf.int[2, ] >= m)
+percentage = count/500 * 100
+paste("For n=500: Count = ", count, ", Percentage = ", percentage, "%")
+
+draws = matrix(rnorm(floor(n) * 1000, m, sqrt(s)), n)
+get.conf.int = function(x) t.test(x)$conf.int
+conf.int = apply(draws, 2, get.conf.int)
+count = sum(conf.int[1, ] <= m & conf.int[2, ] >= m)
+percentage = count/1000 * 100
+paste("For n=1000: Count = ", count, ", Percentage = ", percentage, "%")
+```
+\hfill\break
+
+###Step IX. Repeat steps V & VII 100/500/1000 times and count the number of times (and percentage) that the population variance is captured by the confidence interval.
+```{r echo=F, message=FALSE, warning=FALSE, error=FALSE}
+draws = matrix(rnorm(floor(n) * 100, m, sqrt(s)), n)
+get.conf.int = function(x) varTest(x, conf.level = 0.95, sigma.squared = s)$conf.int
+conf.int = apply(draws, 2, get.conf.int)
+count = sum(conf.int[1, ] <= s & conf.int[2, ] >= s)
+percentage = count/100 * 100
+paste("For n=100: Count = ", count, ", Percentage = ", percentage, "%")
+
+draws = matrix(rnorm(floor(n) * 500, m, sqrt(s)), n)
+get.conf.int = function(x) varTest(x, conf.level = 0.95, sigma.squared = s)$conf.int
+conf.int = apply(draws, 2, get.conf.int)
+count = sum(conf.int[1, ] <= s & conf.int[2, ] >= s)
+percentage = count/500 * 100
+paste("For n=500: Count = ", count, ", Percentage = ", percentage, "%")
+
+draws = matrix(rnorm(floor(n) * 1000, m, sqrt(s)), n)
+get.conf.int = function(x) varTest(x, conf.level = 0.95, sigma.squared = s)$conf.int
+conf.int = apply(draws, 2, get.conf.int)
+count = sum(conf.int[1, ] <= s & conf.int[2, ] >= s)
+percentage = count/1000 * 100
+paste("For n=1000: Count = ", count, ", Percentage = ", percentage, "%")
+```
+\hfill\break
+
+##Q.2] In a filament cut test, a razor blade was tested six different times with ultimate forces corresponding to 8.5, 13.9, 7.4, 10.3, 15.7, 4.0.
+ 
+###a] find 95% confidence interval on mean using standard t-distribution
+```{r echo=F, message=FALSE, warning=FALSE, error=FALSE}
+forces <- c(8.5, 13.9, 7.4, 10.3, 15.7, 4.0)
+forcesNintyFive <- t.test(forces, sigma.x = sd(forces), conf.level = 0.95)
+print("For 95% interval: ")
+print(forcesNintyFive)
+```
+\hfill\break
+###b] Find a 95% confidence interval on the mean using Efron's percentile method.
+```{r echo=F, message=FALSE, warning=FALSE, error=FALSE}
+library(boot)
+fboot <- function(x, i) mean(x[i])
+bs <- boot(forces, fboot, R=1000)
+efronForcesPerc <- boot.ci(bs, conf=0.95, type="perc")
+print(efronForcesPerc)
+```
+\hfill\break
+
+###c] Find a 95% confidence interval on the mean using the BCa method and the ABC method.
+```{r echo=F, message=FALSE, warning=FALSE, error=FALSE}
+library(boot)
+fbootBCa <- function(x, i) mean(x[i])
+bsBCa <- boot(forces, fbootBCa, R=1000)
+efronForcesBCa <- boot.ci(bsBCa, conf=0.95, type="bca")
+print("BCa test")
+print(efronForcesBCa)
+
+print("ABC test")
+fabc <- function(x, w) w%*%x
+efronForcesABC <- abc.ci(forces, fabc, conf =0.95)
+print(efronForcesABC)
+```
+\hfill\break
+
+###d] Find a 95% confidence interval on the mean using the percentile-t method.
+```{r echo=F, message=FALSE, warning=FALSE, error=FALSE}
+library(resample)
+bootC <- bootstrap(forces, mean, seed = 0)
+percentileForces <- CI.percentile(bootC, probs = c(0.025, 0.975))
+# percentileForces <- CI.percentile(bootC, probs = c(0.95))
+print("percentile-t  test:")
+print(percentileForces)
+```
+\hfill\break
+
+#Assignment D
+
+##Q.1]
+```{r s, echo=FALSE}
+sample = c(4.94, 5.06, 4.53, 5.07, 4.99, 5.16, 4.38, 4.43, 4.93, 4.72, 4.92, 4.96)
+```
+
+###(a) Estimate an Efron percentile bootstrap 90% confidence interval on the mean aflatoxin residue. 
+Use B = 1000 resamples
+```{r a, echo=FALSE}
+library(boot)
+sample.mean<-function(data,x){
+    mean(data[x])
+}
+
+boot_obj = boot(sample, sample.mean, R=1000)
+boot.ci(boot_obj, conf = 0.90, type="perc")
+```
+
+###(b) Compare the alfatoxin level found with the industry average value of 5.7 ppm
+Is the upper confidence limit less than 5.7 ppb, or is it equal or above? What does this imply about a hypothesis test of H0 : mu >= 5.7 ppb versus H1 : mu < 5.7 ppb at the alpha = 0.05 significance level?
+
+```{r b, echo=FALSE}
+boot.ci(boot_obj, conf = 0.95, type="perc")
+```
+
+
+###(c) Find the P-value for the test in (b)
+
+```{r c, echo=FALSE}
+z = (mean(sample) - 5.7)/(sd(sample)/sqrt(length(sample)))
+2*pnorm(-abs(z))
+```
+
+**Result:**
+
+- Since P-value < 0.05, so reject null hypothesis.
+
+
+
+##Q.2]
+
+###(a) Find the observed Recall R, Precision P, figure of merit F2.
+
+```{r 2a, echo=FALSE}
+recall = 123/(123+27)
+precision = 123/(123+625)
+figureOfMerit = (precision*recall)/(0.8*precision + 0.2*recall)
+print('Precison:')
+print(precision)
+print('Recall:')
+print(recall)
+print('F-score:')
+print(figureOfMerit)
+```
+
+###(b) Resample the 2 × 2 contingency table B = 1000 times. (Hint: Use the multinomialdistribution and rmultinom() in R.)
+
+->
+```{r contingency resample}
+Relevant_true <- c(123,27)
+Irrelevant_true <- c(625,6703)
+total_relevant_doc <- 150
+total_irrelevant_doc <- 7328
+Relevant_true <- rmultinom(1000, total_relevant_doc, Relevant_true)
+Irrelevant_true <- rmultinom(1000, total_irrelevant_doc, Irrelevant_true)
+```
+
+\hfill\break  
+
+###(c) Find 90% and 95% confidence intervals for the true F2 for the complete database using Efron's percentile method.
+
+->
+The 90% confidence interval for F2 of database is: 
+```{r contingency CI 90%, echo=FALSE}
+f2.boot <- c()
+for(i in 1:1000)
+  {
+    p = Relevant_true[1,i]/(Relevant_true[1,i] + Irrelevant_true[1,i])
+    r = Relevant_true[1,i]/150
+    f_merit = p*r/(0.8*p + 0.2*r)
+    f2.boot <- c(f2.boot, f_merit)
+}
+quantile(f2.boot,probs = c(0.05,0.95))
+```
