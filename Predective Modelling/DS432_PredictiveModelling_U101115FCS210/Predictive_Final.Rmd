@@ -1,0 +1,2402 @@
+---
+title: |
+  | Predictive Modelling for Data Science
+  | DS432
+  | Kotalwar Sangamesh
+  | U101115FCS210
+  | Course in-charge: Prof. Suman Sanyal
+output:
+  pdf_document:
+    fig_caption: yes
+    number_sections: yes
+  html_document:
+    df_print: paged
+header-includes:
+- \usepackage{titling}
+- \pretitle{\begin{center}\LARGE\includegraphics[width=12cm]{logo.png}\\[\bigskipamount]}
+- \posttitle{\end{center}}
+---
+\newpage
+\tableofcontents
+\newpage
+
+#Acknowledgement
+I'm highly indebted to Prof. Suman Sanyal for his guidance and constant supervision as well as for providing necessary information regarding the assignments.
+&nbsp;
+
+I acknowledge that any work that I submit for assessment at NIIT University:
+&nbsp;
+
+1. Must be all my own work.
+&nbsp;
+
+2. Must not have been prepared with the assistance of any other person, except those permitted within University guidelines or the specific assessment guidelines for the piece of work.
+&nbsp;
+
+3. Has not previously been submitted for assessment at this University or elsewhere.
+
+
+\newpage
+
+&nbsp;
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r wrap-hook, echo =FALSE}
+library(knitr)
+hook_output = knit_hooks$get('output')
+knit_hooks$set(output = function(x, options) {
+  # this hook is used only when the linewidth option is not NULL
+  if (!is.null(n <- options$linewidth)) {
+    x = knitr:::split_lines(x)
+    # any lines wider than n should be wrapped
+    if (any(nchar(x) > n)) x = strwrap(x, width = n)
+    x = paste(x, collapse = '\n')
+  }
+  hook_output(x, options)
+})
+```
+#Assignment A
+##Q.1
+Step 1) Load the data in
+```{r }
+library(data.table)
+#data <-  as.data.frame(fread("BankBayesLoan.txt"))
+data <- read.csv("BankBayesLoan.txt", stringsAsFactors = FALSE,header=TRUE, sep="\t")
+```
+
+```{r out.width="50%"}
+hist(data$age,xlab="Age",ylab="Number of people")
+hist(data$ed,xlab="Years of education",ylab="Number of people")
+hist(data$employ)
+hist(data$income)
+hist(data$debtinc)
+hist(data$creddebt)
+#hist(data$otherdebt)
+hist(data$default)
+```
+
+
+```{r}
+testdata <- subset(data,default==0 | default==1)
+#show(testdata)
+```
+
+
+Step 3: Make a correlation matrix and plot it
+```{r}
+M<-cor(testdata,use="complete.obs")
+show(M)
+library('corrplot') 
+corrplot(M, method = "circle") 
+```
+
+
+Step 4: PCA on data
+```{r}
+library(ggplot2)
+pca <- prcomp(data[c(1:8)] , center = TRUE , scale.=TRUE )
+summary(pca)
+```
+
+
+The eigen values are nothing but normalized sd squared
+```{r}
+eigen_data <- pca$sd^2
+```
+
+Step 5: Find the scree plot to know how many variables to choose
+```{r}
+#lines(1:8,eigen_data)
+```
+
+Step 6 : Infer from loadings
+```{r}
+otherpca <- princomp(data[c(1:8)],cor = TRUE)
+summary(otherpca)
+otherpca$loadings
+library(factoextra)
+eigen_val <- get_eigenvalue(otherpca)
+show(eigen_val)
+```
+
+SCREE PLOT
+```{r}
+fviz_eig(pca, choice = "eigenvalue", addlabels=TRUE)
+library(factoextra)
+fviz_pca_var(pca)
+fviz_pca_ind(pca)
+fviz_pca_biplot(pca)
+```
+
+##Q. 2 
+CRISP - DM for sales in the company
+
+### Reading the Dataset
+
+```{r input, echo=FALSE}
+data <- read.csv("file1_2.txt", header = TRUE, sep = ",")
+head(data)
+```
+
+### Data Pre-Processing
+
+Step 1: Checking for any Missing Data and Statistical Summary
+
+```{r prepro, echo = FALSE, warning=FALSE, message=FALSE}
+library(Hmisc)
+library(dplyr)
+library(ggpubr)
+library(e1071) 
+details <- describe(data) 
+details
+```
+Results: 
+1: No missing values were found.
+2: The highest and lowest values of each parameter in the dataset indicates that those five are almost closer to each other i.e. no outliers.
+
+
+Histogram Plot for the sales of men's clothing
+```{r show2, echo = FALSE, message = FALSE, warning = FALSE, out.width="50%"}
+gghistogram(data$men)
+```
+Histogram Plot for the sales of women's clothing
+```{r show1, echo = FALSE, message = FALSE, warning = FALSE, out.width="50%"}
+gghistogram(data$women)
+```
+
+
+=> Testing for normality using Shapiro-Wilk Test
+
+
+```{r normality, echo = FALSE, message = FALSE, warning = FALSE}
+shapiro.test(data$men)
+shapiro.test(data$women)
+```
+Result: 
+1: The p-value for both the sales data is not normally distributed.
+2: Data Normalization is required.
+
+ii -> Calculating the trend and removing it for men's sales
+
+```{r seasonality, echo = FALSE, message = FALSE, warning = FALSE, out.width="50%"}
+library(forecast)
+trend <- ma(data$men, order = 2, centre = TRUE)
+without_trend <- data$men - trend
+
+plot(data$men,type = "l")
+trend1 <- ma(without_trend, order = 2, centre = TRUE)
+plot(trend1)
+without_trend1 <- without_trend - trend1
+plot(without_trend1)
+```
+
+ii -> Normalizing the data using skewness reduction techniques
+
+```{r skewness, echo = FALSE, message = FALSE, warning = FALSE}
+library(forecast)
+cat("Skewness of the original data of the women's sales is:",skewness(data$women))
+normal_women <- (data$women)^(1/3)
+cat("SKewness of the normalized data for the women's sales is:",skewness(normal_women))
+```
+The skewness of the women's sales data shows a positive skewness of 0.58 and thus is right skewed.
+Right skewed data can be reduced by cube root method and as a result of which the skewness was reduced by 10 times.
+
+
+iii -> Z-Score Standardisation
+
+```{r scaling, echo = FALSE, warning=FALSE, message=FALSE, out.width="50%"}
+scaled_men <- scale(without_trend1, center = TRUE, scale = TRUE)
+gghistogram(scaled_men)
+ggqqplot(scaled_men, color = "dodgerblue2")
+
+scaled_women <- scale(normal_women, center = TRUE, scale = TRUE)
+gghistogram(scaled_women)
+ggqqplot(scaled_women, color = "dodgerblue2")
+```
+
+Result: The above plot shows that the points now lie closer to the line, after removing the seasonality.
+
+### EDA
+
+```{r show, echo = FALSE, message = FALSE, warning = FALSE, out.width="50%"}
+
+ggdensity(scaled_men, main = "Density Plot of men sales", xlab = "sales", color = "gray", fill = "dimgray")
+
+ggdensity(scaled_women, main = "Density Plot of women sales", xlab = "sales", color = "gray", fill = "dimgray")
+
+```
+=> Testing for normality
+```{r check, echo = FALSE, message = FALSE, warning = FALSE}
+print(shapiro.test(scaled_men))
+print(shapiro.test(scaled_women))
+```
+Result: The data has a considerably good p-value and thus cleares the test for normality
+
+```{r corr, echo = FALSE, message = FALSE, warning = FALSE}
+new_df <- data.frame(data$date, scaled_men, scaled_women)
+lat_df <- na.omit(new_df)
+
+cat("Correlation coeffficient between the men's and women's sales is",cor(lat_df$scaled_men, lat_df$scaled_women))
+print("Thus the sales of both the genders is closely related.")
+```
+
+##Q.3 
+### PHASE 1: Reading the Dataset
+```{r echo=FALSE}
+
+data <- read.csv("teleco.txt", header = TRUE, sep = "\t")
+#print(tail(data))
+```
+
+### PHASE 2 => Data Pre-Processing
+
+Step 1: Checking for any Missing Data and Statistical Summary
+```{r missing, echo = FALSE, warning=FALSE, message=FALSE}
+library(Hmisc)
+library(dplyr)
+library(ggpubr)
+details <- describe(data) 
+details
+```
+
+So, we find missing data in 4 columns namely logtoll, logequi, logcard, logwire.
+
+Since all the data that have missing values are of [log of the user], we will replace the missing values with mean of the data.
+
+```{r echo = F}
+for(i in 1:ncol(data)){
+  data[is.na(data[,i]), i] <- mean(data[,i], na.rm = TRUE)
+}
+print(describe(data))
+```
+Result: So no missing values present now.
+
+Step 2: Checking for any outliers by histogram method.
+```{r echo=F , out.width="50%"}
+#for (col in 2:ncol(data)) {
+ #   hist(data[,col], main=paste(colnames(data[col]), sep = ""))
+#}
+for (col in 2:(ncol(data)-1)) {
+    if(max(data[col]) > 1){
+    boxplot(data[,col], main=paste(colnames(data[col]), sep = ""))}
+}
+```
+
+Result : There are outliers in many columns but it is not necessary that all the parameters of the same row are having extreme data, so we are not removing any data from it.
+
+Step 3: Normality test
+```{r echo=F, messages=F ,warning=F, out.width="50%"}
+library(Hmisc)
+library(dplyr)
+library(ggpubr)
+#shapiro.test(data$churn)
+```
+```{r echo=F,warning=F, out.width="50%"}
+
+for (col in 2:(ncol(data)-1)) {
+    if(max(data[col]) > 1){
+    scaled_data <- scale(data[,col], center = TRUE, scale = TRUE)
+    #gghistogram(scaled_data)
+    hist(scaled_data, breaks =50, main=paste(colnames(data[col]), sep = ""))
+    # Normality check
+    #print(colnames(data[col]))
+    #print(shapiro.test(scaled_data))
+}
+}
+```
+
+### PCA on Scaled Data
+```{r warnings=F,echo=F, messages=F}
+library(psych)
+data <- scale(data, center = TRUE, scale = TRUE)
+pca <- principal(data, nfactors = 4, residuals = FALSE, rotate="none", scores=TRUE)
+pca
+#pca$values
+#plot(pca$values, type = "b") #Scree plot analysis
+```
+
+Result: As a result of PCA,
+Components having highest variability and which will show the same variation as complete data according to PCA are custcat, equipmon, equipten, marital
+\newpage
+
+#Assignment B
+
+##Q.1] 
+###A] Reading data and making data into training and test data.
+```{r echo=F, message=F, error=F, warning=F}
+RawData <- read.table("RegD1.txt", header=T)
+#Considering every tenth data
+test = seq(10,nrow(RawData),by=10)
+#trainData
+trainData <- RawData[-test,]
+print("head of training data")
+print(head(trainData))
+#testData
+testData <- RawData[test,]
+print("head of testing data")
+print(head(testData))
+```
+
+Fitting data for linear regression model
+```{r echo=F, message=F, error=F, warning=F}
+
+model <- lm(Y1~X1+X2, data=trainData)
+summary(model)
+```
+
+Several metrics useful for regression diagnostics : model.diag.metrics
+```{r echo=F, message=F, error=F, warning=F}
+library(broom)
+model.diag.metrics <- augment(model)
+head(model.diag.metrics)
+```
+
+Meta Data for model.diag.metrics
+Among the table columns, there are:
+
+Y1: original values
+X1, X2: the observed values
+.fitted: the fitted values
+.resid: the residual errors
+
+Let's see correlation between the features:
+```{r echo=F, message=F, error=F, warning=F}
+# library(corrplot)
+# corrplot(model, method = "number")
+```
+We can see the plot in residual and fitted plot here now:
+```{r echo=F, message=F, error=F, warning=F, out.width="50%"}
+plot(model, pch=16, which=1)
+```
+
+Note how the residuals plot of this last model shows some important points still lying far away from the middle area of the graph. Since the behaviour is random in nature we were successful in this test.
+
+```{r echo=FALSE}
+library(car)
+library(stats)
+#qqnorm(residuals(model))
+#qqline(residuals(model))
+qq <- qqPlot(model, main="QQ Plot")
+print(qq)
+```
+
+Check outliers:
+```{r echo=FALSE}
+library(car)
+leveragePlots(model)
+```
+
+Check if errors are auto corelated
+```{r echo=F, error=F, warning=FALSE}
+library(lmtest)
+dwtest(model)
+```
+We can see that there are outliers in this dataset mainly row 5,42,57,32 from X1, and 18,42,57,1 from X2. So, overall number 42 and 57 are outliers.
+
+Influential Variables :
+Fiding influential data points is required. 
+So let us look at variable plots:
+```{r echo=F, message=F, warning=F, error=FALSE, out.width="50%"}
+# Cook's D plot
+# identify D values > 4/(n-k-1 )
+cutoff <- 4/((nrow(trainData)-length(model$coefficients)-2)) 
+plot(model, which=4, cook.levels=cutoff)
+# It shows datapoints 1,5 and 47 are influential
+influencePlot(model, main="Influence Plot", sub="Circle size is proportial to Cook's Distance" )
+```
+
+
+Checking for Multi-collinearity:
+```{r echo=F, message=F, error=F, warning=F, out.width="50%"}
+# Evaluate Collinearity
+vif(model) # variance inflation factors 
+sqrt(vif(model)) > 2 # problem?
+```
+
+Non-constant Error Variance:
+```{r echo=F, error=F, warning=F, message=F, out.width="50%"}
+# Evaluate homoscedasticity
+# non-constant error variance test
+ncvTest(model)
+# plot studentized residuals vs. fitted values 
+spreadLevelPlot(model)
+```
+
+Nonlinearity test:
+```{r echo=F, message=F, warning=FALSE, error=F, out.width="50%"}
+# Evaluate Nonlinearity
+# component + residual plot 
+#crPlots(model)
+# Ceres plots 
+ceresPlots(model)
+```
+So all the factors are linear which is required.
+
+Non-independence of Errors:
+```{r echo=F, message=F, error=F, warning=F}
+# Test for Autocorrelated Errors
+durbinWatsonTest(model)
+```
+
+###q.1] B] Reading data and making data into training and test data.
+```{r echo=F, message=F, error=F, warning=F}
+RawData <- read.table("RegD2.txt", header=T)
+#Considering every tenth data
+test = seq(10,nrow(RawData),by=10)
+#trainData
+trainData <- RawData[-test,]
+print("head of training data")
+print(head(trainData))
+#testData
+testData <- RawData[test,]
+print("head of testing data")
+print(head(testData))
+```
+
+Fitting data for linear regression model
+```{r echo=F, message=F, error=F, warning=F}
+
+model <- lm(Y1~X1+X2+X3, data=trainData)
+summary(model)
+```
+
+Several metrics useful for regression diagnostics : model.diag.metrics
+```{r echo=F, message=F, error=F, warning=F}
+library(broom)
+model.diag.metrics <- augment(model)
+head(model.diag.metrics)
+```
+
+Meta Data for model.diag.metrics
+Among the table columns, there are:
+
+Y1: original values
+X1, X2: the observed values
+.fitted: the fitted values
+.resid: the residual errors
+
+Let's see correlation between the features:
+```{r echo=F, message=F, error=F, warning=F}
+# library(corrplot)
+# corrplot(model, method = "number")
+```
+We can see the plot in residual and fitted plot here now:
+```{r echo=F, message=F, error=F, warning=F, out.width="50%"}
+plot(model, pch=16, which=1)
+```
+
+Note how the residuals plot of this last model shows some important points still lying far away from the middle area of the graph. Since the behaviour is random in nature we were successful in this test.
+
+```{r echo=FALSE, out.width="50%"}
+library(car)
+library(stats)
+#qqnorm(residuals(model))
+#qqline(residuals(model))
+qq <- qqPlot(model, main="QQ Plot")
+print(qq)
+```
+
+Check outliers:
+```{r echo=FALSE, out.width="50%"}
+library(car)
+leveragePlots(model)
+```
+
+Check if errors are auto corelated
+```{r echo=F, error=F, warning=FALSE, out.width="50%"}
+library(lmtest)
+dwtest(model)
+```
+We can see that there are outliers in this dataset mainly row 5,42,57,32 from X1, and 18,42,57,1 from X2. So, overall number 42 and 57 are outliers.
+
+Influential Variables :
+Fiding influential data points is required. 
+So let us look at variable plots:
+```{r echo=F, message=F, warning=F, error=FALSE, out.width="50%"}
+# Cook's D plot
+# identify D values > 4/(n-k-1 )
+cutoff <- 4/((nrow(trainData)-length(model$coefficients)-2)) 
+plot(model, which=4, cook.levels=cutoff)
+# It shows datapoints 1,5 and 47 are influential
+influencePlot(model, main="Influence Plot", sub="Circle size is proportial to Cook's Distance" )
+```
+
+
+Checking for Multi-collinearity:
+```{r echo=F, message=F, error=F, warning=F}
+# Evaluate Collinearity
+vif(model) # variance inflation factors 
+sqrt(vif(model)) > 2 # problem?
+```
+
+Non-constant Error Variance:
+```{r echo=F, error=F, warning=F, message=F}
+# Evaluate homoscedasticity
+# non-constant error variance test
+ncvTest(model)
+# plot studentized residuals vs. fitted values 
+spreadLevelPlot(model)
+```
+
+Nonlinearity test:
+```{r echo=F, message=F, warning=FALSE, error=F, out.width="50%"}
+# Evaluate Nonlinearity
+# component + residual plot 
+#crPlots(model)
+# Ceres plots 
+ceresPlots(model)
+```
+So all the factors are linear which is required.
+
+Non-independence of Errors:
+```{r echo=F, message=F, error=F, warning=F}
+# Test for Autocorrelated Errors
+durbinWatsonTest(model)
+```
+
+###q.1] C]
+Reading data and making data into training and test data.
+```{r echo=F, message=F, error=F, warning=F}
+RawData <- read.table("RegD3.txt", header=T)
+#Considering every tenth data
+test = seq(10,nrow(RawData),by=10)
+#trainData
+trainData <- RawData[-test,]
+print("head of training data")
+print(head(trainData))
+#testData
+testData <- RawData[test,]
+print("head of testing data")
+print(head(testData))
+```
+
+Fitting data for linear regression model
+```{r echo=F, message=F, error=F, warning=F}
+
+model <- lm(Y1~X1+X2+X4, data=trainData)
+summary(model)
+```
+
+Several metrics useful for regression diagnostics : model.diag.metrics
+```{r echo=F, message=F, error=F, warning=F}
+library(broom)
+model.diag.metrics <- augment(model)
+head(model.diag.metrics)
+```
+
+Meta Data for model.diag.metrics
+Among the table columns, there are:
+
+Y1: original values
+X1, X2: the observed values
+.fitted: the fitted values
+.resid: the residual errors
+
+
+Let's see correlation between the features:
+```{r echo=F, message=F, error=F, warning=F}
+# library(corrplot)
+# corrplot(model, method = "number")
+```
+We can see the plot in residual and fitted plot here now:
+```{r echo=F, message=F, error=F, warning=F, out.width="50%"}
+plot(model, pch=16, which=1)
+```
+
+Note how the residuals plot of this last model shows some important points still lying far away from the middle area of the graph. Since the behaviour is random in nature we were successful in this test.
+
+```{r echo=FALSE, out.width="50%"}
+library(car)
+library(stats)
+#qqnorm(residuals(model))
+#qqline(residuals(model))
+qq <- qqPlot(model, main="QQ Plot")
+print(qq)
+```
+
+Check outliers:
+```{r echo=FALSE, out.width="50%"}
+library(car)
+leveragePlots(model)
+```
+
+Check if errors are auto corelated
+```{r echo=F, error=F, warning=FALSE, message=F}
+library(lmtest)
+dwtest(model)
+```
+We can see that there are outliers in this dataset mainly row 5,42,57,32 from X1, and 18,42,57,1 from X2. So, overall number 42 and 57 are outliers.
+
+Influential Variables :
+Fiding influential data points is required. 
+So let us look at variable plots:
+```{r echo=F, message=F, warning=F, error=FALSE, out.width="50%"}
+# Cook's D plot
+# identify D values > 4/(n-k-1 )
+cutoff <- 4/((nrow(trainData)-length(model$coefficients)-2)) 
+plot(model, which=4, cook.levels=cutoff)
+# It shows datapoints 1,5 and 47 are influential
+influencePlot(model, main="Influence Plot", sub="Circle size is proportial to Cook's Distance" )
+```
+
+
+Checking for Multi-collinearity:
+```{r echo=F, message=F, error=F, warning=F}
+# Evaluate Collinearity
+vif(model) # variance inflation factors 
+sqrt(vif(model)) > 2 # problem?
+```
+
+Non-constant Error Variance:
+```{r echo=F, error=F, warning=F, message=F, out.width="50%"}
+# Evaluate homoscedasticity
+# non-constant error variance test
+ncvTest(model)
+# plot studentized residuals vs. fitted values 
+spreadLevelPlot(model)
+```
+
+Nonlinearity test:
+```{r echo=F, message=F, warning=FALSE, error=F, out.width="50%"}
+# Evaluate Nonlinearity
+# component + residual plot 
+#crPlots(model)
+# Ceres plots 
+ceresPlots(model)
+```
+So all the factors are linear which is required.
+
+Non-independence of Errors:
+```{r echo=F, message=F, error=F, warning=F}
+# Test for Autocorrelated Errors
+durbinWatsonTest(model)
+```
+
+##Q.2] Question: Use the data set , to fit a model. Perform regression diagnostics on this model. Display any plots that are relevant.
+
+(a) Check and comment on the constant variance assumption for the errors.
+(b) Check and comment on the normality assumption.
+(c) Check and comment on the large leverage points.
+(d) Check and comment on the outliers.
+(e) Check and comment on the influential points.
+(f) Check and comment on the structure of the relationship between the predictors and the
+response.
+(g) Compute and comment on the condition numbers.
+(h) Compute and comment on the correlations between the predictors.
+(i) Compute and comment on the VIF.
+
+--------------------------------------------------------------------------------------------------------------------
+
+####Linear Model  
+  
+\hfill\break  
+```{r warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+library(dplyr)
+data_regd4 = read.table("RegD14.txt", header=TRUE)
+
+# Divding the dataset into train and test set.
+train4 = slice(data_regd4, seq(-10, -nrow(data_regd4), -10))
+test4 = slice(data_regd4, seq(10, nrow(data_regd4), 10))
+
+# Linear Model
+model_reg4=lm(Y~.,train4)
+summary(model_reg4)
+```
+####DIAGNOSIS
+####Regression assumptions
+
+Linear regression makes several assumptions about the data, such as :
+i) Linearity of the data. The relationship between the predictor (x) and the outcome (y) is assumed to be linear.
+ii) Normality of residuals. The residual errors are assumed to be normally distributed.
+iii) Homogeneity of residuals variance. The residuals are assumed to have a constant variance (homoscedasticity)
+iv) Independence of residuals error terms.
+
+
+All these assumptions and potential problems can be checked by producing some diagnostic plots visualizing the residual errors.
+**Diagnostic plots**
+\hfill\break  
+  
+  *a) Check and comment on the constant variance assumption for the errors.*
+\hfill\break
+Scale-Location (or Spread-Location) is used to check the homogeneity of variance of the residuals i.e. they have a constant variance (homoscedasticity).  
+  Horizontal line with equally spread points is a good indication of homoscedasticity.
+  \hfill\break  
+  
+```{r, fig.width=4, fig.height=4,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+plot(model_reg4,3)
+```
+  
+  \hfill\break
+  **Inference: The variance is always constant. Hence our assumption holds true.** 
+  
+  \hfill\break
+  *(b) Check and comment on the normality assumption.*
+  \hfill\break  
+  
+  Normal Q-Q is used to examine whether the residuals are normally distributed. It's good if residuals points follow the straight dashed line.  
+\hfill\break 
+```{r, fig.width=4, fig.height=4,,echo=FALSE, out.width="50%"}
+hist(residuals(model_reg4),breaks=20)
+
+qqnorm (residuals (model_reg4), ylab="Residuals")
+qqline (residuals (model_reg4))
+```
+
+\hfill\break  
+  
+  **Inference: The residual errors are normally distributed and hence our second assumption also holds true.But, there are three extreme outliers.**  
+  .
+  
+\hfill\break
+  *(c) Check and comment on the large leverage points.*  
+  \hfill\break  
+  A data point has high leverage, if it has extreme predictor x values. This can be detected by examining the leverage statistic or the hat-value. A value of this statistic above 2(p + 1)/n indicates an observation with high leverage where, p is the number of predictors and n is the number of observations.  
+  \hfill\break  
+  The Residuals vs Leverage plot can help us to find influential observations if any.
+    \hfill\break  
+  
+```{r, fig.width=4, fig.height=4,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+# Residuals vs Leverage
+plot(model_reg4, 5)
+```
+
+**Inference: Corresponding to the leverage statistic i.e. [[2*(p+1)]/n]] 0.31, there are only 2 points having high leverage.  **
+ 
+\hfill\break
+  *(d) Check and comment on the outliers.*  
+  \hfill\break 
+  Outliers can be identified by examining the standardized residual (or studentized residual), which is the residual divided by its estimated standard error. Standardized residuals can be interpreted as the number of standard errors away from the regression line.  
+  Observations whose standardized residuals are greater than 3 in absolute value are possible outliers  
+  \hfill\break  
+  On this plot, outlying values are generally located at the upper right corner or at the lower right corner. Those spots are the places where data points can be influential against a regression line.
+    \hfill\break  
+  
+```{r, fig.width=4, fig.height=4,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+# Residuals vs Leverage
+plot(model_reg4, 5,id.n = 3)
+```
+
+**Inference: There are approx 2-3 outliers present.**
+ 
+\hfill\break
+  *(e) Check and comment on the influential points.*  
+  An influential value is a value, which inclusion or exclusion can alter the results of the regression analysis. Such a value is associated with a large residual.  
+  \hfill\break  
+  Statisticians have developed a metric called Cook's distance to determine the influence of a value. This metric defines influence as a combination of leverage and residual size.  
+    A rule of thumb is that an observation has high influence if Cook's distance exceeds 4/(n - p - 1), where n is the number of observations and p the number of predictor variables.
+    \hfill\break  
+  
+```{r, fig.width=4, fig.height=4,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+# Cook's distance
+plot(model_reg4, 4,id.n = 2)
+```
+
+**Inference:From above plot we can see there are 2 points(#3,#5) exceeding Cook's distance(in our case, 0.10).  **
+ 
+\hfill\break
+  *(g) Compute and comment on the correlations between the predictors.* 
+  
+  \hfill\break  
+```{r, fig.width=4, fig.height=4,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+round(cor(train4[,-c(7)]), 3)
+```
+
+**Inference: There are several large pairwise correlations both between predictors and between predictors and the response. **
+
+  *(h) Compute and comment on the condition numbers.*  
+  Condition numbers, indicate whether more than just one independent linear combination is to blame.
+  \hfill\break  
+```{r, fig.width=4, fig.height=4,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+x=model.matrix(model_reg4)
+e=eigen (t(x) %*% x)
+cat("\nEigen Values: \n")
+e$val
+cat("\nCondition Numbers: \n")
+sqrt(e$val[1]/e$val)
+```
+**Inference: There is a wide range in the eigenvalues and several condition numbers are large. This means that problems are being caused by more than just one linear combination. **
+
+\hfill\break
+  *(i) Compute and comment on the VIF.*  
+  VIF Test for removal of multicollinearity.  
+    VIFi>10 indicates serious multicollinearity  for the predictor. 
+  
+  \hfill\break  
+```{r, fig.width=4, fig.height=4,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+library(faraway)
+summary(model_reg4)
+vif(model_reg4)
+```
+  
+  Re-computing VIF's after removing variable with highest VIF value
+  
+```{r, fig.width=4, fig.height=4,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+for_vif=lm(Y~. -X5 -X4 -X3,data=train4)
+vif(for_vif)
+summary(for_vif)
+```
+  
+  **Inference: we see that the accuracy is mostly unaffected even after removing the correlated variables and reducing the dimension by 3**
+
+##Q.3]   Question: Use the data to fit a model using the following methods.
+(a) Least squares.
+(b) Least absolute deviations.
+(c) Huber method.
+(d) Least trimmed squares.
+Compare the results. Use diagnostic methods to detect any outliers or influential points. Remove these points and then use least squares. Compare the results.
+-----------------------------------------------------------------------------------------------------------------
+
+**(a) Least squares.**
+  \hfill\break  
+  Least squares is a statistical method used to determine a line of best fit by minimizing the sum of squares created by a mathematical function. A "square" is determined by squaring the distance between a data point and the regression line. The least squares approach limits the distance between a function and the data points that a function is trying to explain. It is used in regression analysis, often in nonlinear regression modeling in which a curve is fit into a set of data.
+  \hfill\break
+  
+```{r warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+library(dplyr)
+data_regd5 = read.table("RegD4.txt", header=TRUE)
+
+# Divding the dataset into train and test set.
+train5=slice(data_regd5, seq(-10, -nrow(data_regd5), -10))
+test5=slice(data_regd5, seq(10, nrow(data_regd5), 10))
+
+# Linear Model
+lm_model_reg5=lm(Y1~.,train5)
+summary(lm_model_reg5)
+```
+**(b) Least absolute deviations.**
+  \hfill\break 
+The method of least absolute deviations fits a line to a set of (x,y) data by choosing slope and intercept parameters to minimize the SAE, or the sum of absolute errors. As with the SSE associated with least squares, the errors in question are the differences between the actual y data values and the corresponding y values defined by the line.
+  \hfill\break 
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+library (quantreg)
+# Linear Model
+model_reg5=rq(Y1~.,data=train5)
+summary(model_reg5)
+```
+
+**(c) Huber method.**
+
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+library (MASS)
+# Linear Model
+model_reg5=rlm(Y1~.,data=train5)
+summary(model_reg5)
+```
+
+**(c) Least trimmed squares.**
+Least trimmed squares (LTS), or least trimmed sum of squares, is a robust statistical method that fits a function to a set of data whilst not being unduly affected by the presence of outliers. It is one of a number of methods for robust regression. Instead of the standard least squares method, which minimises the sum of squared residuals over n points, the LTS method attempts to minimise the sum of squared residuals over a subset k of those points. The unused n-k points do not influence the fit.
+
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+library (robustbase)
+# Linear Model
+model_reg5=ltsReg(Y1~.,data=train5)
+summary(model_reg5)
+```
+   
+  \hfill\break  
+  
+  **Inference: In all the applied regression methods the variable X3 is consistently insignificant therefore it can be removed. **
+  **There doesn't seem to be a significant change in the coefficient of other variables when compared across the techniques. So, its better to use least squares method.**
+  \hfill\break
+  **DIAGNOSIS TO FIND INFLUENTIAL POINTS AND OUTLIERS**
+  \hfill\break
+  *Influential Points * 
+  \hfill\break
+  An influential value is a value, which inclusion or exclusion can alter the results of the regression analysis. Such a value is associated with a large residual.  
+  \hfill\break  
+  Statisticians have developed a metric called Cook's distance to determine the influence of a value. This metric defines influence as a combination of leverage and residual size.  
+    A rule of thumb is that an observation has high influence if Cook's distance exceeds 4/(n - p - 1), where n is the number of observations and p the number of predictor variables.
+    \hfill\break  
+  
+```{r, fig.width=4, fig.height=4,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+# Cook's distance
+plot(lm_model_reg5,4,id.n = 1)
+```
+
+**Inference: From above plot we can see there is one point(#19) exceeding Cook's distance(in our case, 0.26).  **\
+ 
+\hfill\break
+  *Outliers *
+  \hfill\break  
+  Outliers can be identified by examining the standardized residual (or studentized residual), which is the residual divided by its estimated standard error. Standardized residuals can be interpreted as the number of standard errors away from the regression line.  
+  Observations whose standardized residuals are greater than 3 in absolute value are possible outliers.
+
+```{r, fig.width=4, fig.height=4,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+# Residuals vs Leverage
+plot(lm_model_reg5, 5,id.n = 3)
+```
+
+**Inference: Observation #19 and #4 are outliers.**
+
+**Computing least squares after removal of the outlier**
+```{r, fig.width=4, fig.height=4,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+# Linear Model
+lm_model_reg5=lm(Y1~.,train5[-c(19,4),])
+summary(lm_model_reg5)
+```
+  
+  **Inference: After removal of outliers, the value of R-squared increased from 0.915 to 0.9707and Adjusted R-squared increased from 0.898 to  0.964.**
+  \hfill\break
+  **Also, the significance of predictor X2 reduced.**
+  
+##Q.4]   Question: Use the data to fit a model with Y as the response and only X3, X4, and X5 as predictors. Use the Box-Cox method to determine the best transformation on the response.
+
+------------------------------------------------------------------------------------------------------------------------
+
+```{r warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+library(dplyr)
+data_regd7 = read.table("RegD7.txt", header=TRUE)
+
+# Divding the dataset into train and test set.
+train7=slice(data_regd7, seq(-10, -nrow(data_regd7), -10))
+test7=slice(data_regd7, seq(10, nrow(data_regd7), 10))
+
+# Linear Model
+model_reg7=lm(Y~X3+X4+X5,train7)
+summary(model_reg7)
+```
+
+ **Normality test**
+  
+  Shapiro-Wilk's method is widely recommended for normality test and it provides better power than K-S. It is based on the correlation between the data and the corresponding normal scores.
+
+```{r ,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+shapiro.test(train7$Y)
+```
+  \hfill\break 
+*Inference: Since the p-value is less than 0.05, the variable is not normally distibuted and we need to power transformation on it.*
+
+\hfill\break 
+ **Box-Cox Method: Determining the best transformation on the response **
+  
+  The Box-Cox method is a popular way to determine a transformation on the response. It is designed for strictly positive responses and chooses the transformation to find the best fit to the data.
+  \hfill\break  
+  Some general considerations concerning the BoxCox method are:
+\hfill\break
+1. The Box-Cox method gets upset by outliers if you find lambda=5, then this is probably
+the reason there can be little justification for actually making such an extreme
+transformation.
+\hfill\break
+2. If some yi <0, we can add a constant to all the y. This can work provided the constant is
+small, but this is an inelegant solution.
+\hfill\break
+3. If max i y i /min i y i is small, then the Box-Cox will not have much real effect because
+power transforms are well approximated by linear transformations over short intervals
+far from the origin.
+\hfill\break
+  
+```{r ,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+library(MASS)
+bc=boxcox(model_reg7,plotit=T,lambda=seq (-1.0, 5.0, by=2.0))
+lambda=bc$x[which.max(bc$y)]
+lambda
+```
+  \hfill\break 
+*Inference: Since value of lambda is reaching 5, we have to perform extreme transformation with lambda=0.27.*
+```{r ,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+powerTransform <- function(y, lambda1, lambda2 = NULL, method = "boxcox") {
+
+  boxcoxTrans <- function(x, lam1, lam2 = NULL) {
+
+    # if we set lambda2 to zero, it becomes the one parameter transformation
+    lam2 <- ifelse(is.null(lam2), 0, lam2)
+
+    if (lam1 == 0L) {
+      log(y + lam2)
+    } else {
+      (((y + lam2)^lam1) - 1) / lam1
+    }
+  }
+
+  switch(method
+         , boxcox = boxcoxTrans(y, lambda1, lambda2)
+         , tukey = y^lambda1
+  )
+}
+
+mnew <- lm(powerTransform(Y, lambda)~X3+X4+X5, train7)
+shapiro.test(powerTransform(train7$Y, lambda))
+```
+  \hfill\break 
+*Inference: After doing power transform, the shapiro test significantly increases the p-value, and the optimal valyue of lambda for this p-value is 0.27 *
+
+##Q.5]   Question: Use the data to fit a linear model. Implement the following variable selection
+methods to determine the "best" model.  
+  (a) Backward Elimination.  
+  (b) AIC, AICC, BIC.  
+  (c) R2, R2a  
+  (d) Mallows Cp.
+
+-----------------------------------------------------------------------------------------------------------------
+
+**(a) Backward Elimination.**
+  \hfill\break  
+  It starts with all predictors in the model (full model), iteratively removes the least contributive predictors, and stops when you have a model where all predictors are statistically significant.  
+  \hfill\break 
+  
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+library(dplyr)
+data_regd8 = read.table("RegD8.txt", header=TRUE)
+
+# Divding the dataset into train and test set.
+train8=slice(data_regd8, seq(-10, -nrow(data_regd8), -10))
+test8=slice(data_regd8, seq(10, nrow(data_regd8), 10))
+
+null=lm(Y~1, data= train8)
+full=lm(Y~., data= train8)
+
+library(leaps)
+back_model=step(full, direction="backward")
+
+```
+\hfill\break   
+*Best Model suggested by Backward elimination : lm(Y~X1+X2+X3+X4+X5) *    
+\hfill\break   
+Predicting the test data
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+back_predict <- back_model %>% predict(test8)
+# Model performance metrics
+data.frame(
+  RMSE = caret::RMSE(back_predict, test8$Y),
+  Rsquare = caret::R2(back_predict, test8$Y)
+)
+```
+\hfill\break
+
+**(b.1) AIC**
+  \hfill\break
+  AIC stands for (Akaike's Information Criteria). The basic idea of AIC is to penalize the inclusion of additional variables to a model. It adds a penalty that increases the error when including additional terms. The lower the AIC, the better the model.  
+  \hfill\break 
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+aic_model=step(null, scope=list(lower=null, upper=full), direction="both")
+```
+  
+*Best Model suggested by AIC : lm(Y~X1+X2+X5) *  
+\hfill\break   
+  
+  Predicting the test data
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+aic_predict <- aic_model %>% predict(test8)
+# Model performance metrics
+data.frame(
+  RMSE = caret::RMSE(aic_predict, test8$Y),
+  Rsquare = caret::R2(aic_predict, test8$Y)
+)
+```
+
+\hfill\break 
+
+**(b.2)BIC**
+\hfill\break  
+  Bayesian Information Criterion is a variant of AIC with a stronger penalty for including additional variables to the model.  
+  The lower the BIC, the better the model.
+  \hfill\break 
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+library(leaps)
+library(car)
+bic_model=regsubsets(Y~.,data=train8, nbest=1,method="exhaustive")
+subsets(bic_model,statistic = "bic",legend=FALSE)
+```
+  
+  *Best Model suggested by BIC : lm(Y~X1+X2+X5)*
+\hfill\break  
+  
+  Predicting the test data 
+
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+bic_model=lm(Y~X1+X2+X5, train8)
+bic_predict <- bic_model %>% predict(test8)
+# Model performance metrics
+data.frame(
+  RMSE = caret::RMSE(bic_predict, test8$Y),
+  Rsquare = caret::R2(bic_predict, test8$Y)
+)
+```
+\hfill\break  
+
+**(b.3)AICc**
+  \hfill\break 
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=TRUE}
+# library(glmulti)
+# aicc_model=glmulti(Y~.,data=train8,crit="aicc",level=1,confsetsize=50,fitfunction=lm,plotty = F, report = F)
+# summary(aicc_model@objects[[1]])
+## gmulti does not work since it required rJava. and rJava requires to have the system in 32 bit
+
+```
+
+*Best Model suggested by AICc : lm(Y~X1+X2+X5)*
+
+\hfill\break   
+
+Predicting the test data  
+
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+aicc_model=lm(Y~X1+X2+X5, train8)
+aicc_predict <- aicc_model %>% predict(test8)
+# Model performance metrics
+data.frame(
+  RMSE = caret::RMSE(aicc_predict, test8$Y),
+  Rsquare = caret::R2(aicc_predict, test8$Y)
+)
+```
+\hfill\break  
+
+**(d.1)R2**
+\hfill\break    
+   It is the square of the sample correlation coefficient between the observed outcomes and the observed predictor values. Ranges from 0 to 1. Higher the R2, better the model.
+
+  \hfill\break   
+  
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+
+r2_model=regsubsets(Y~.,data=train8, nbest=1,method="exhaustive")
+b=subsets(r2_model,statistic = "rsq",legend=FALSE,ylim=c(0.64,0.67))
+```
+*Best Model suggested by R2 : lm(Y~X1+X2+X3+X4+X5+X6+X8)*
+\hfill\break  
+
+Predicting the test data   
+
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+r2_model=lm(Y~X1+X2+X3+X4+X5+X6+X8, train8)
+r2_predict <- r2_model %>% predict(test8)
+# Model performance metrics
+data.frame(
+  RMSE = caret::RMSE(r2_predict, test8$Y),
+  Rsquare = caret::R2(r2_predict, test8$Y)
+)
+```
+\hfill\break
+
+**(d.2)R2a**
+\hfill\break    
+   The adjusted R-squared compares the descriptive power of regression models that include diverse numbers of predictors. Every predictor added to a model increases R-squared and never decreases it. Thus, a model with more terms may seem to have a better fit just for the fact that it has more terms, while the adjusted R-squared compensates for the addition of variables and only increases if the new term enhances the model above what would be obtained by probability and decreases when a predictor enhances the model less than what is predicted by chance. 
+
+  \hfill\break   
+  
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+r2a_model=regsubsets(Y~.,data=train8, nbest=1,method="exhaustive")
+subsets(r2a_model,statistic = "adjr2",legend=FALSE, ylim=c(0.6,0.65))
+```
+*Best Model suggested by R2 : lm(Y~X1+X2+X3+X4+X5)*
+\hfill\break  
+
+Predicting the test data   
+
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+r2a_model=lm(Y~X1+X2+X3+X4+X5, train8)
+r2a_predict <- r2a_model %>% predict(test8)
+# Model performance metrics
+data.frame(
+  RMSE = caret::RMSE(r2a_predict, test8$Y),
+  Rsquare = caret::R2(r2a_predict, test8$Y)
+)
+```
+\hfill\break
+
+**(d)Mallow's Cp**
+\hfill\break    
+  A small Mallows' Cp value indicates that the model is relatively precise (has small variance) in estimating the true regression coefficients and predicting future responses.  
+
+  \hfill\break   
+  
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+library(leaps)
+library(car)
+mcp_model=regsubsets(Y~.,data=train8, nbest=1,method="exhaustive")
+subsets(mcp_model,statistic = "cp",legend=FALSE,ylim=c(0,5))
+```
+*Best Model suggested by Mallow's Cp : lm(Y~X1+X2+X5)*
+\hfill\break  
+
+Predicting the test data   
+
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+mcp_model=lm(Y~X1+X2+X5, train8)
+mcp_predict <- mcp_model %>% predict(test8)
+# Model performance metrics
+data.frame(
+  RMSE = caret::RMSE(mcp_predict, test8$Y),
+  Rsquare = caret::R2(mcp_predict, test8$Y)
+)
+```
+\hfill\break  
+
+**Final Inferences**  
+  **a) Highest accuracy is achieved by the variables selected in R2 model though it contains the maximum number of variables**  
+  **b) The variables selected by R2a and backward elimination rank second in terms of accuracy but have a reduced number of variables. **  
+  **c) AIC, BIC, AICc and Mallow's Cp yielded the same subset variables and have the least accuracy and number of variables..**
+  
+##Q.6]   Question: Consider the data RegD9.txt remove every tenth observation from the data for use as a test sample. Use the remaining data as a training sample building the following models.
+  (a) Linear regression with all predictors.
+  (b) Linear regression with variables selected using AIC.
+  (c) Principle component regression.
+  (d) Partial least squares.
+  (e) Ridge regression.
+Use the models you find to predict the response in the test sample. Make a report on the
+performance of the models.  
+  
+---------------------------------------------------------------------------------------------------------------------------------------
+  
+**(a) Linear regression with all predictors**
+   
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+library(dplyr)
+data_regd9 = read.table("RegD9.txt", header=TRUE)
+
+# Divding the dataset into train and test set.
+train9=slice(data_regd9, seq(-10, -nrow(data_regd9), -10))
+test9=slice(data_regd9, seq(10, nrow(data_regd9), 10))
+
+# Linear Model
+model_reg9=lm(Y~.,train9)
+summary(model_reg9)
+```
+
+ \hfill\break 
+*Inference: Value of for the linear model using predictor variables from Linear regression with all predictors: R-squared=0.9769,	Adjusted R-squared= 0.9754 *
+  
+**(b) Linear regression with variables selected using AIC.**
+   
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+null=lm(Y~1, data= train9)
+full=lm(Y~., data= train9)
+ step(null, scope=list(lower=null, upper=full), direction="both")
+```
+  \hfill\break   
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+aic_model=lm(Y~X1+X2+X7, train9)
+summary(aic_model)
+```
+  \hfill\break 
+*Inference: Value of for the linear model using predictor variables from AIC: R-squared=0.9764,	Adjusted R-squared= 0.9761 *
+  
+**(c) Principle component regression.**
+   
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+library(psych)
+data <- scale(data_regd9, center = TRUE, scale = TRUE)
+pca <- principal(data_regd9, nfactors = 3, residuals = FALSE, rotate="none", scores=TRUE)
+pca
+```
+ \hfill\break 
+*Inference: After looking at different eigen values we come to conclusion  that we require 3 PC's. After looking at the correlation matrix, we conclude the PCs are X3(0.97), X1(0.61), X2(0.72)*
+
+\hfill\break   
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+pca_model=lm(Y~X1+X2+X3, train9)
+summary(pca_model)
+```
+\hfill\break
+*Inference: Value of for the linear model using predictor variables from PCA: R-squared=0.9761,	Adjusted R-squared= 0.9758 *
+
+**(c) Partial Least Squares**
+   
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE, out.width="50%"}
+library(plsdepot)
+dataPLS <- train9[,c(1,3:12,2)]
+pls1 = plsreg1(dataPLS[,1:11], dataPLS[,12, drop=FALSE], comps = 3)
+```
+\hfill\break
+**R2 value for each of our components**
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+pls1$R2
+```
+\hfill\break
+**Now let's look at what is highly correlated with Y with a plot**
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE, out.width="50%"}
+plot(pls1)
+```
+
+\hfill\break
+**From the plot we see that X1 with negative impact, X6 and x7 with positive impact make better correlation with Y so we will make our model accoring to these predictors**
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+pls_model=lm(Y~X1+X6+X7, train9)
+summary(pls_model)
+```
+\hfill\break
+*Inference: Value of for the linear model using predictor variables from PCA: R-squared=0.9761,	Adjusted R-squared= 0.9758 *
+
+**(c) Ridge regression**
+Ridge attempts to minimize residual sum of squares of predictors in a given model. However, ridge regression includes an additional 'shrinkage' term - the square of the coefficient estimate - which shrinks the estimate of the coefficients towards zero. The impact of this term is controlled by another term, lambda (determined seperately). 
+```{r,warning=FALSE,message=FALSE,error=FALSE,echo=FALSE}
+library(glmnet)
+library(MASS)
+lambdas <- 10^seq(3, -2, by = -.1)
+ridgeModel <- lm.ridge(train9$Y~train9$X8+train9$X6+train9$X7, lambda = lambdas, alpha=0)
+summary(ridgeModel)
+plot(ridgeModel)
+```
+
+\newpage
+
+#Assignment C
+
+**Loading of data**
+Data files with n1 = 10^6, 10^7 and 5x10^7 are generated and their files are also created. But for n1 = 10^8, the memory reached limit and the PC stopped responding.
+```{r data1, , echo=TRUE}
+# library(data.table)
+# library(biglm)
+# library(biganalytics)
+# n1 <- 1000000
+# x1 <- 1:n1
+# x2 <-runif(n1,5,95)
+# x3 <- rbinom(n1,1,.4)
+# x4 <- rnorm(n1, mean=-30, sd=200)
+# x5 <- runif(n1,-5000,5000)
+# b0 <- 17; b1 <- -0.466; b2 <- 0.037; b3 <- -5.2; b4 <- 2; b5 <- 0.00876
+# sigma <- 1.4
+# epsilon <- rnorm(x1,0,sigma)
+# y <- b0 + b1*x1  + b2*x2  + b3*x3 + b4*x4 + b5*x5 + x1*x2 + epsilon
+# fwrite(data.frame(cbind(y,x1,x2,x3,x4,x5)), file = "data14a.txt", sep = " ", quote=T)
+```
+
+```{r data2, echo=TRUE}
+# n1 <- 10000000
+# x1 <- 1:n1
+# x2 <-runif(n1,5,95)
+# x3 <- rbinom(n1,1,.4)
+# x4 <- rnorm(n1, mean=-30, sd=200)
+# x5 <- runif(n1,-5000,5000)
+# b0 <- 17; b1 <- -0.466; b2 <- 0.037; b3 <- -5.2; b4 <- 2; b5 <- 0.00876
+# sigma <- 1.4
+# epsilon <- rnorm(x1,0,sigma)
+# y <- b0 + b1*x1  + b2*x2  + b3*x3 + b4*x4 + b5*x5 + x1*x2 + epsilon
+# fwrite(data.frame(cbind(y,x1,x2,x3,x4,x5)), file = "data14b.txt", sep = " ", quote=T)
+```
+
+```{r data3, echo=TRUE}
+# n1 <- 50000000
+# x1 <- 1:n1
+# x2 <-runif(n1,5,95)
+# x3 <- rbinom(n1,1,.4)
+# x4 <- rnorm(n1, mean=-30, sd=200)
+# x5 <- runif(n1,-5000,5000)
+# b0 <- 17; b1 <- -0.466; b2 <- 0.037; b3 <- -5.2; b4 <- 2; b5 <- 0.00876
+# sigma <- 1.4
+# epsilon <- rnorm(x1,0,sigma)
+# y <- b0 + b1*x1  + b2*x2  + b3*x3 + b4*x4 + b5*x5 + x1*x2 + epsilon
+# fwrite(data.frame(cbind(y,x1,x2,x3,x4,x5)), file = "data14c.txt", sep = " ", quote=T)
+```
+
+
+
+```{r data, echo=TRUE}
+# library(data.table)
+# data1 = fread("data14a.txt")
+# data2 = fread("data14b.txt")
+# data3 = fread("data14c.txt")
+
+```
+
+**lm command**
+
+```{r lm1, echo=TRUE}
+# gc(reset = TRUE)
+# start.time<-proc.time()
+# lm1 = lm(y~., data1)
+# summary(lm1)
+# end.time<-proc.time()
+# save.time<-end.time-start.time
+# cat("\nNumber of minutes running: ", save.time[3]/60, "\n\n")
+# gc()
+```
+
+```{r lm2, echo=TRUE}
+# gc(reset = TRUE)
+# start.time<-proc.time()
+# summary(lm(y~., data2))
+# end.time<-proc.time()
+# save.time<-end.time-start.time
+# cat("\nNumber of minutes running: ", save.time[3]/60, "\n\n")
+# gc()
+```
+
+- lm command worked for n1 = 10^6 and 10^7 data files, but the memory allocation reached limit for further data files.
+
+**biglm command**
+
+```{r biglm1, echo=TRUE}
+# library(biglm)
+# gc(reset = TRUE)
+# start.time<-proc.time()
+# summary(biglm(y~x1+x2+x3+x4+x5, data1))
+# end.time<-proc.time()
+# save.time<-end.time-start.time
+# cat("\nNumber of minutes running: ", save.time[3]/60, "\n\n")
+# gc()
+```
+
+```{r biglm2, echo=TRUE}
+# gc(reset = TRUE)
+# start.time<-proc.time()
+# summary(biglm(y~x1+x2+x3+x4+x5, data2))
+# end.time<-proc.time()
+# save.time<-end.time-start.time
+# cat("\nNumber of minutes running: ", save.time[3]/60, "\n\n")
+# gc()
+```
+
+
+- biglm command worked for n1 = 10^6 and 10^7 data files, but the memory allocation reached limit for further data files. But in comparison with lm command, it is way faster in processing, as being shown by the RAM allocation and "Number of minutes running".
+
+
+**BigMemory & BigAnalytics**
+
+```{r bigmemory, echo=TRUE}
+# library(bigmemory)
+# library(biganalytics)
+# gc(reset = TRUE)
+# start.time<-proc.time()
+# 
+# n1 <- 1000000
+# x1 <- 1:n1
+# x2 <-runif(n1,5,95)
+# x3 <- rbinom(n1,1,.4)
+# x4 <- rnorm(n1, mean=-30, sd=200)
+# x5 <- runif(n1,-5000,5000)
+# b0 <- 17; b1 <- -0.466; b2 <- 0.037; b3 <- -5.2; b4 <- 2; b5 <- 0.00876
+# sigma <- 1.4
+# epsilon <- rnorm(x1,0,sigma)
+# y <- b0 + b1*x1  + b2*x2  + b3*x3 + b4*x4 + b5*x5 + x1*x2 + epsilon
+# 
+# 
+# write.big.matrix(as.big.matrix(cbind(y,x1,x2,x3,x4,x5)), file = "data14Tempa.txt", sep = " ")
+# 
+# end.time<-proc.time()
+# save.time<-end.time-start.time
+# cat("\nNumber of minutes running to write: ", save.time[3]/60, "\n\n")
+# 
+# start.time<-proc.time()
+# 
+# w<-read.big.matrix("data14Tempa.txt", header=F, sep=" ", col.names = c("y","x1","x2","x3","x4","x5"))
+# 
+# end.time<-proc.time()
+# save.time<-end.time-start.time
+# cat("\nNumber of minutes running to read: ", save.time[3]/60, "\n\n")
+# 
+# start.time<-proc.time()
+# 
+# summary(biglm.big.matrix(y~x1+x2+x3+x4+x5, w))
+# 
+# end.time<-proc.time()
+# save.time<-end.time-start.time
+# cat("\nNumber of minutes running to find biglm: ", save.time[3]/60, "\n\n")
+# 
+# gc()
+```
+
+
+```{r biganalytics1, echo=TRUE}
+
+# gc(reset = TRUE)
+# start.time<-proc.time()
+# 
+# w<-read.big.matrix("data14b.txt", header=F, sep=" ", col.names = c("y","x1","x2","x3","x4","x5"))
+# 
+# summary(bigglm.big.matrix(y~x1+x2+x3+x4+x5, w))
+# 
+# end.time<-proc.time()
+# save.time<-end.time-start.time
+# cat("\nNumber of minutes running: ", save.time[3]/60, "\n\n")
+# gc()
+```
+
+
+```{r biganalytics2, , echo=TRUE}
+
+# gc(reset = TRUE)
+# start.time<-proc.time()
+# 
+# w<-read.big.matrix("data14c.txt", header=F, sep=" ", col.names = c("y","x1","x2","x3","x4","x5"))
+# 
+# summary(biglm.big.matrix(y~x1+x2+x3+x4+x5, w))
+# 
+# end.time<-proc.time()
+# save.time<-end.time-start.time
+# cat("\nNumber of minutes running: ", save.time[3]/60, "\n\n")
+# gc()
+```
+
+
+```{r netcdf1, echo=TRUE}
+# library(biglm)
+# #library(ncdf4)
+# 
+# n1 <- 1000000
+# x1 <- 1:n1
+# x2 <-runif(n1,5,95)
+# x3 <- rbinom(n1,1,.4)
+# x4 <- rnorm(n1, mean=-30, sd=200)
+# x5 <- runif(n1,-5000,5000)
+# b0 <- 17; b1 <- -0.466; b2 <- 0.037; b3 <- -5.2; b4 <- 2; b5 <- 0.00876
+# sigma <- 1.4
+# epsilon <- rnorm(x1,0,sigma)
+# y <- b0 + b1*x1  + b2*x2  + b3*x3 + b4*x4 + b5*x5 + x1*x2 + epsilon
+# 
+# ncpath <- ""
+# ncname <- "ncdTemp1"
+# ncfile <- paste(ncpath, ncname,".nc4",sep="")
+# fwrite(data.frame(cbind(y,x1,x2,x3,x4,x5)),ncfile, row.names=FALSE, sep=" ")
+```
+
+
+```{r netcdf2, , echo=TRUE}
+# library(biglm)
+# #library(ncdf4)
+# 
+# n1 <- 10000000
+# x1 <- 1:n1
+# x2 <-runif(n1,5,95)
+# x3 <- rbinom(n1,1,.4)
+# x4 <- rnorm(n1, mean=-30, sd=200)
+# x5 <- runif(n1,-5000,5000)
+# b0 <- 17; b1 <- -0.466; b2 <- 0.037; b3 <- -5.2; b4 <- 2; b5 <- 0.00876
+# sigma <- 1.4
+# epsilon <- rnorm(x1,0,sigma)
+# y <- b0 + b1*x1  + b2*x2  + b3*x3 + b4*x4 + b5*x5 + x1*x2 + epsilon
+# 
+# ncpath <- ""
+# ncname <- "ncdTemp2"
+# ncfile <- paste(ncpath, ncname,".nc",sep="")
+# fwrite(data.frame(cbind(y,x1,x2,x3,x4,x5)),ncfile, row.names=FALSE, sep=" ")
+```
+
+
+```{r netcdf3, echo=TRUE}
+# library(biglm)
+# library(ncdf4)
+# 
+# n1 <- 50000000
+# x1 <- 1:n1
+# x2 <-runif(n1,5,95)
+# x3 <- rbinom(n1,1,.4)
+# x4 <- rnorm(n1, mean=-30, sd=200)
+# x5 <- runif(n1,-5000,5000)
+# b0 <- 17; b1 <- -0.466; b2 <- 0.037; b3 <- -5.2; b4 <- 2; b5 <- 0.00876
+# sigma <- 1.4
+# epsilon <- rnorm(x1,0,sigma)
+# y <- b0 + b1*x1  + b2*x2  + b3*x3 + b4*x4 + b5*x5 + x1*x2 + epsilon
+# 
+# ncpath <- ""
+# ncname <- "ncdTemp3"
+# ncfile <- paste(ncpath, ncname,".nc",sep="")
+# fwrite(data.frame(cbind(y,x1,x2,x3,x4,x5)),ncfile, row.names=FALSE, sep=" ")
+```
+
+\newpage
+#Assignment D
+
+## Q.1:
+ Identify the ARIMA(p, d, q) model and the white noise variance estimate for the given data sets. (Use ts.plot, acf, pacf, eacf, arima, etc. Avoid using auto.arima except for verifying your answer.)
+
+```{r}
+# Read all data sets
+
+TSD1 <- read.table("TSD1.txt", stringsAsFactors=FALSE)
+TSD2 <- read.table("TSD2.txt", stringsAsFactors=FALSE)
+TSD3 <- read.table("TSD3.txt", stringsAsFactors=FALSE)
+TSD4 <- read.table("TSD4.txt", stringsAsFactors=FALSE)
+TSD5 <- read.table("TSD5.txt", stringsAsFactors=FALSE)
+TSD6 <- read.table("TSD6.txt", stringsAsFactors=FALSE)
+TSD7 <- read.table("TSD7.txt", stringsAsFactors=FALSE)
+TSD8 <- read.table("TSD8.txt", stringsAsFactors=FALSE)
+TSD9 <- read.table("TSD9.txt", stringsAsFactors=FALSE)
+TSD10 <- read.table("TSD10.txt", stringsAsFactors=FALSE)
+
+summary(TSD1)
+summary(TSD2)
+summary(TSD3)
+summary(TSD4)
+summary(TSD5)
+summary(TSD6)
+summary(TSD7)
+summary(TSD8)
+summary(TSD9)
+summary(TSD10)
+
+# as.numeric(TSD1$x)
+# as.numeric(TSD2$x)
+# as.numeric(TSD3$x)
+# as.numeric(TSD4$x)
+# as.numeric(TSD5$x)
+# as.numeric(TSD6$x)
+# as.numeric(TSD7$x)
+# as.numeric(TSD8$x)
+# as.numeric(TSD9$x)
+# as.numeric(TSD10$x)
+```
+
+Identify the ARIMA(p, d, q) model and the white noise variance estimate for the given data sets. (Use ts.plot, acf, pacf, eacf, arima, etc. Avoid using auto.arima except for verifying your answer.)
+
+Dataset1 : TSD1.txt
+\hfill\break
+```{r echo=F, warning=F, error=F, message=F}
+library(data.table)
+#library(forecast)
+tsd1 = fread("TSD1.txt") #Read table
+ts.plot(tsd1$x)
+```
+\hfill\break
+
+- Here we can see there is no trend and no seasonal component. Let's now plot acf and pacf
+\hfill\break
+```{r echo=F, warning=F, error=F, message=F}
+acf(tsd1$x)
+pacf(tsd1$x)
+```
+\hfill\break
+
+\hfill\break
+Here we can see that the ACF plot is tailing off and the PACF plot is cut off after p=1, So the best suitable model is AR(1)
+\hfill\break
+
+Let us verify with auto.arima
+```{r error=FALSE, message=F,warning=F, echo=FALSE}
+library(forecast)
+auto.arima(tsd1$x)
+```
+\hfill\break
+So we verify that the model is AR(1)
+\hfill\break
+
+Dataset1 : TSD2.txt
+\hfill\break
+```{r echo=F, warning=F, error=F, message=F}
+tsd2 = fread("TSD2.txt") #Read table
+ts.plot(tsd2$x)
+```
+\hfill\break
+
+- Here we can see there is no trend and no seasonal component. Let's now plot acf and pacf
+\hfill\break
+```{r echo=F, warning=F, error=F, message=F}
+acf(tsd2$x)
+pacf(tsd2$x)
+```
+\hfill\break
+
+\hfill\break
+Here we can see that the ACF plot is tailing off and the PACF plot is cut off after p=2, So the best suitable model is AR(2)
+\hfill\break
+
+Let us verify with auto.arima
+```{r error=FALSE, message=F,warning=F, echo=FALSE}
+auto.arima(tsd2$x)
+```
+\hfill\break
+So we verify that the model is AR(2)
+\hfill\break
+
+Dataset1 : TSD3.txt
+\hfill\break
+```{r echo=F, warning=F, error=F, message=F}
+tsd3 = fread("TSD3.txt") #Read table
+ts.plot(tsd3$x)
+```
+\hfill\break
+
+- Here we can see there is no trend and no seasonal component. Let's now plot acf and pacf
+\hfill\break
+```{r echo=F, warning=F, error=F, message=F}
+acf(tsd3$x)
+pacf(tsd3$x)
+```
+\hfill\break
+
+\hfill\break
+Here we can see that the ACF plot cuts off at q=1, So the best suitable model is MA(1)
+\hfill\break
+
+Let us verify with auto.arima
+```{r error=FALSE, message=F,warning=F, echo=FALSE}
+auto.arima(tsd3$x)
+```
+\hfill\break
+So we verify that the model is MA(1)
+\hfill\break
+
+Dataset1 : TSD4.txt
+\hfill\break
+```{r echo=F, warning=F, error=F, message=F}
+library(data.table)
+tsd4 = fread("TSD4.txt") #Read table
+tsd4x <- ts(tsd4$x, frequency = 3)
+plot(decompose(tsd4x))
+```
+\hfill\break
+
+- Here we can see there is no trend and no seasonal component. Let's now plot acf and pacf
+\hfill\break
+```{r echo=F, warning=F, error=F, message=F}
+
+acf(tsd4$x)
+pacf(tsd4$x)
+library(TSA)
+eacf(tsd4$x)
+Box.test(tsd4$x)
+```
+\hfill\break
+
+\hfill\break
+Here we can see that the ACF and pacf plot doesn't give us much thought so we go for a eacf plot and the eacf gives us the model as ARMA(0,0) with box-pierce test giving positive sign, we may also conclude that it is a white noise.
+\hfill\break
+
+Let us verify with auto.arima
+```{r error=FALSE, message=FALSE,warning=F, echo=FALSE}
+auto.arima(tsd4$x)
+```
+\hfill\break
+So we could not verify that the model is ARMA(0,0) as we get it as ARIMA(2,0,1)
+\hfill\break
+
+Dataset1 : TSD5.txt
+\hfill\break
+```{r echo=F, warning=F, error=F, message=F}
+tsd5 = fread("TSD5.txt") #Read table
+ts.plot(tsd5$x)
+```
+\hfill\break
+
+- Here we can see there is no trend and no seasonal component. Let's now plot acf and pacf
+\hfill\break
+```{r echo=F, warning=F, error=F, message=F}
+
+acf(tsd5$x)
+pacf(tsd5$x)
+#library(TSA)
+#eacf(tsd4$x)
+#Box.test(tsd4$x)
+```
+\hfill\break
+
+\hfill\break
+Here we can see that the ACF and pacf plot doesn't give us much thought so we go for a eacf plot and the eacf gives us the model as ARMA(0,0) with box-pierce test giving positive sign, we may also conclude that it is a white noise.
+\hfill\break
+
+Let us verify with auto.arima
+```{r error=FALSE, message=FALSE,warning=F, echo=FALSE}
+auto.arima(tsd5$x)
+```
+\hfill\break
+So we could not verify that the model is ARMA(0,0) as we get it as ARIMA(2,0,1)
+\hfill\break
+
+```{r}
+#TSD6
+mean6<-mean(TSD6$x)
+sd6<-sd(TSD6$x)
+ts.plot(TSD6)
+acf(TSD6)
+pacf(TSD6)
+arima(TSD6)
+```
+
+```{r}
+#TSD7
+mean7<-mean(TSD7$x)
+sd7<-sd(TSD7$x)
+ts.plot(TSD7)
+acf(TSD7)
+pacf(TSD7)
+arima(TSD7)
+```
+
+```{r}
+#TSD8
+mean8<-mean(TSD8$x)
+sd8<-sd(TSD8$x)
+ts.plot(TSD8)
+acf(TSD8)
+pacf(TSD8)
+arima(TSD8)
+```
+
+```{r}
+#TSD9
+mean9<-mean(TSD9$x)
+sd9<-sd(TSD9$x)
+ts.plot(TSD9)
+acf(TSD9)
+pacf(TSD9)
+arima(TSD9)
+```
+
+```{r}
+#TSD10
+mean10<-mean(TSD10$x)
+sd10<-sd(TSD10$x)
+ts.plot(TSD10)
+acf(TSD10)
+pacf(TSD10)
+arima(TSD10)
+```
+
+## Question 2:  
+Simulate a series of n = 500 Gaussian white noise observations as in and compute the sample ACF to lag 20. Compare the sample ACF you obtain to the actual ACF. Now repeat the same by using only n = 50. How does changing n affect the results?
+
+```{r}
+library(ggplot2)
+
+#Population ACF
+
+LAG = c(0:20) # lag up to 20
+acf.p = c(1, rep(0,20)) # population acf (as above)
+ACF.df.p = data.frame(lag = LAG, acf = acf.p) # turn the above into data frame
+
+# n=500 gaussian white noise ACF:
+
+w = rnorm(500,0,1) # n=500 gaussian white noise
+ACF.500 = acf(w, lag.max = 20)
+ACF.500 = acf(w, lag.max = 20, plot = FALSE)
+ACF.df.500 = with(ACF.500, data.frame(lag, acf))
+
+# n=50 gaussian white noise ACF:
+
+w = rnorm(50,0,1) # n=50 gaussian white noise
+ACF.50 = acf(w, lag.max = 20)
+ACF.50 = acf(w, lag.max = 20, plot = FALSE)
+ACF.df.50 = with(ACF.50, data.frame(lag, acf))
+
+# #combine the acfs (population, n=500, n=50)
+# dat = data.frame(rbind(ACF.df.500, ACF.df.50, ACF.df.p),
+# n = c(rep("n=500", 21), rep("n=50", 21), rep("population", 21)))
+# 
+# # comparsion:
+# 
+# ggplot(data = dat, mapping = aes(x = lag, y = acf)) +
+# geom_hline(aes(yintercept = 0)) +
+# facet_grid(n ~ . )+
+# geom_segment(mapping = aes(xend = lag, yend = 0))
+
+```
+
+As we can see from above comnparison that as the sample size n gets larger the sample autocorrelation function gets close to its popoulation counterpart.
+
+
+##Question 3:
+Consider the so2 data set, which is part of astsa package. Fit an ARIMA(p, d, q) model to the data, performing all of the necessary diagnostics. After deciding on an appropriate model, forecast the data into the future four time periods ahead (about one month) and calculate 95% prediction intervals for each of the four forecasts.
+
+```{r}
+library(astsa, quietly=TRUE, warn.conflicts=FALSE)
+require(knitr)
+library(ggplot2)
+#Read in the data
+so2
+
+#Convert the data into a time series
+so2 <- ts(so2)
+so2
+
+#plot the data
+plot.ts(so2)
+
+#decomposing non-seasonal data(smoothing)
+library(TTR)
+so2SMA <- SMA(so2, n=8) #moving average of n=8
+plot.ts(so2SMA)
+
+#Forecast:
+so2F <-  HoltWinters(so2, gamma = F)
+so2F
+so2F; so2F$SSE
+plot(so2F) #observed v/s fitted
+
+#Forecast for 4 time periods
+library("forecast")
+so2F2 <- forecast:::forecast.HoltWinters(so2F, h=4)
+so2F2
+plot(forecast(so2F2))
+
+acf(so2F2$residuals, lag.max=20, na.action = na.omit)
+Box.test(so2F2$residuals, lag=20, type='Ljung-Box')
+plot.ts(so2F2$residuals)
+```
+
+ ARIMA model :
+
+```{r}
+#Differencing a time series
+#First differencing
+so2Diff <- diff(so2, differences = 1)
+plot.ts(so2Diff)
+#The time series of first differences (above) does appear to be stationary 
+#in mean and variance, as the level of the series stays roughly constant 
+#over time, and the variance of the series appears roughly constant over time. 
+
+#selecting a candidate ARIMA Model
+# Install the tools
+source(url("http://lib.stat.cmu.edu/general/tsa2/Rcode/itall.R"))
+
+# Plot ACF and PACF
+acf(so2Diff, lag.max=20)            # plot a correlogram
+acf(so2Diff, lag.max=20, plot=FALSE) # get the autocorrelation values
+pacf(so2Diff, lag.max=20)             # plot a partial correlogram
+pacf(so2Diff, lag.max=20, plot=FALSE) # get the partial autocorrelation values
+
+library(forecast)
+auto.arima(so2)
+```
+
+Forecasting Using an ARIMA Model:
+
+```{r}
+
+so2arima <- arima(so2, order=c(1,1,2)) # fit an ARIMA(1,1,2) model
+so2arima
+
+library("forecast") # load the "forecast" R library
+so2forecasts <- forecast:::forecast.Arima(so2arima, h=4, level=c(95))
+so2forecasts
+plot(forecast(so2forecasts))
+
+```
+
+
+## Question 4:
+Perform a time series model specification, estimation, model diagnostics, and forecasting for a financial stock of your choice.
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+library(quantmod)
+library(tseries)
+library(timeSeries)
+library(forecast)
+library(xts)
+```
+
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+# Pull data from Yahoo finance 
+getSymbols('MSFT', from='2000-01-01', to='2017-11-01')
+
+# Select the relevant close price series
+stock_prices = MSFT[,4]
+
+
+# Compute the log returns for the stock
+stock = diff(log(stock_prices),lag=1)
+stock = stock[!is.na(stock)]
+
+# Plot log returns 
+plot(stock,type='l', main='log returns plot')
+
+
+# Conduct ADF test on log returns series
+print(adf.test(stock))
+
+# Split the dataset in two parts - training and testing
+breakpoint = floor(nrow(stock)*(2.9/3))
+
+# Apply the ACF and PACF functions
+par(mfrow = c(1,1))
+acf.stock = acf(stock[c(1:breakpoint),], main='ACF Plot', lag.max=100)
+pacf.stock = pacf(stock[c(1:breakpoint),], main='PACF Plot', lag.max=100)
+
+
+# Initialzing an xts object for Actual log returns
+Actual_series = xts(0,as.Date("2017-11-01","%Y-%m-%d"))
+
+# Initialzing a dataframe for the forecasted return series
+forecasted_series = data.frame(Forecasted = numeric())
+
+for (b in breakpoint:(nrow(stock)-1)) {
+  
+  stock_train = stock[1:b, ]
+  stock_test = stock[(b+1):nrow(stock), ]
+  
+  # Summary of the ARIMA model using the determined (p,d,q) parameters
+  fit = arima(stock_train, order = c(2, 0, 2),include.mean=FALSE)
+  #summary(fit)
+  
+  # plotting a acf plot of the residuals
+  #acf(fit$residuals,main="Residuals plot")
+  
+  # Forecasting the log returns
+  arima.forecast = forecast:::forecast.Arima(fit, h = 1,level=99)
+  #summary(arima.forecast)
+  
+  # plotting the forecast
+  #par(mfrow=c(1,1))
+  #plot(arima.forecast, main = "ARIMA Forecast")
+  
+  # Creating a series of forecasted returns for the forecasted period
+  forecasted_series = rbind(forecasted_series,arima.forecast$mean[1])
+  colnames(forecasted_series) = c("Forecasted")
+  
+  # Creating a series of actual returns for the forecasted period
+  Actual_return = stock[(b+1),]
+  Actual_series = c(Actual_series,xts(Actual_return))
+  rm(Actual_return)
+  
+  #print(stock_prices[(b+1),])
+  #print(stock_prices[(b+2),])
+  
+}
+
+# Adjust the length of the Actual return series
+Actual_series = Actual_series[-1]
+
+# Create a time series object of the forecasted series
+forecasted_series = xts(forecasted_series,index(Actual_series))
+```
+
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+# Create a plot of the two return series - Actual versus Forecasted
+plot(Actual_series,xlim = c(1000,1000),type='l',main='Actual Returns Vs Forecasted Returns')
+lines(forecasted_series,lwd=1.5,col='red')
+legend('topleft',c("Actual","Forecasted"),lty=c(1,1),lwd=c(1.5,1.5),col=c('black','red'))
+
+# Create a table for the accuracy of the forecast
+comparsion = merge(Actual_series,forecasted_series)
+comparsion$Accuracy = sign(comparsion$Actual_series)==sign(comparsion$Forecasted)
+print(comparsion)
+
+# Compute the accuracy percentage metric
+Accuracy_percentage = sum(comparsion$Accuracy == 1)*100/length(comparsion$Accuracy)
+print(Accuracy_percentage)
+```
+\newpage
+#Assignment E
+
+##Q.1] Consider the Weekly data set, which is part of ISLR package. It contains the weekly stock market returns for 21 years.
+###a] Produce some numerical and graphical summaries of the Weekly data. Do there appear to be any pattern?
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+library(ISLR)
+data(Weekly)
+summary(Weekly)
+```
+
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+pairs(Weekly)
+```
+\hfill\break
+We can observe that the Weekly data from ISLR has Volume and Year taken together has logarithmic distribution.
+\hfill\break
+
+###b] Use the full data set to perform a logistic regression with Direction as the response and the five lag variables plus Volume as predictors. Use the summary function to print the results. Do any of the predictors appears to be statistically significant? If so, which ones?
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+Weeklyglm.fit <- glm(Direction ~ Lag1 + Lag2 + Lag3 + Lag4 + Lag5 + Volume, data=Weekly, family="binomial")
+summary(Weeklyglm.fit)
+```
+\hfill\break
+Statistically significant predictor among the given is Lag2 only since the p-value is greater than the significant code attached to it.
+
+###c] Compute the confusion matrix and overall fraction of correct predictions. Explain what the confusion matrix is telling you about the types of mistakes made by logistic regression.
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+Weeklyglm.probs <- predict(Weeklyglm.fit, type="response")
+Weeklyglm.preds <- ifelse(Weeklyglm.probs>.5, "Up", "Down")
+ConfusionMatrixBasic <- table(Weekly$Direction, Weeklyglm.preds)
+print(ConfusionMatrixBasic)
+
+library(caret)
+confusionMatrix(factor(Weekly$Direction), factor(Weeklyglm.preds))
+```
+\hfill\break
+There are a predominance of Up prediction. The model predicts well the Up direction, but it predict poorly the Down direction.
+
+###d] Now fit the logistic regression model using a training data period from 1990 to 2008, with Lag2 as the only predictor. Compute the confusion matrix and the overall fraction of correct predictions for the held out data (that is, the data from 2009 and 2010.)
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+trainSetWeekly = (Weekly$Year<=2008)
+testSetWeekly = Weekly[!trainSetWeekly,]
+
+glm.fit.d <- glm(Direction ~ Lag2, data=Weekly, subset=trainSetWeekly, family="binomial")
+glm.probs.d <- predict(glm.fit.d, type="response", newdata=testSetWeekly)
+glm.preds.d <- ifelse(glm.probs.d>.5, "Up", "Down")
+ConfusinMatrixBasic.d <- table(testSetWeekly$Direction, glm.preds.d)
+print(ConfusinMatrixBasic.d)
+
+library(caret)
+confusionMatrix(factor(testSetWeekly$Direction), factor(glm.preds.d))
+```
+\hfill\break
+Overall fraction of correct predictions for the held out data is accuracy is 0.625
+
+###e] Repeat (d) using linear discriminant analysis (LDA).
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+library(MASS)
+lda.fit.e <- lda(Direction ~ Lag2, data=Weekly, subset=trainSetWeekly)
+lda.preds.e <- predict(lda.fit.e, newdata=testSetWeekly)
+ConfusinMatrixBasic.e <- table(testSetWeekly$Direction, lda.preds.e$class)
+print(ConfusinMatrixBasic.e)
+
+library(caret)
+confusionMatrix(factor(testSetWeekly$Direction), factor(lda.preds.e$class))
+```
+\hfill\break
+Overall fraction of correct predictions for the held out data is accuracy is 0.625
+
+###f] Repeat (d) using quadratic discriminant analysis (QDA).
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+qda.fit.f <- qda(Direction ~ Lag2, data=Weekly, subset=trainSetWeekly)
+qda.preds.f <- predict(qda.fit.f, newdata=testSetWeekly)
+ConfusionMatrixBasic.f <- table(testSetWeekly$Direction, qda.preds.f$class)
+print(ConfusionMatrixBasic.f)
+# ibrary(caret)
+# confusionMatrix(factor(testSetWeekly$Direction), factor(qda.preds.f$class))
+accuracy.f<- (ConfusionMatrixBasic.f["Down", "Down"] + ConfusionMatrixBasic.f["Up", "Up"])/sum(ConfusionMatrixBasic.f)
+print(accuracy.f)
+```
+\hfill\break
+Overall fraction of correct predictions for the held out data is accuracy is 0.5865
+
+###g] Repeat (d) using KNN with  =1.
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+library(class)
+set.seed(1)
+train.g = Weekly[trainSetWeekly, c("Lag2", "Direction")]
+knn.pred = knn(train=data.frame(train.g$Lag2), test=data.frame(testSetWeekly$Lag2), cl=train.g$Direction, k=1)
+ConfusionMatrixBasic.g <- table(testSetWeekly$Direction, knn.pred)
+print(ConfusionMatrixBasic.g)
+accuracy.g <- (ConfusionMatrixBasic.g["Down", "Down"] + ConfusionMatrixBasic.g["Up", "Up"])/sum(ConfusionMatrixBasic.g)
+print(accuracy.g)
+```
+\hfill\break
+Overall fraction of correct predictions for the held out data is accuracy is 0.5865
+
+###h] Which of these methods appears to provide the best results on this data?
+\hfill\break
+\hfill\break
+The models from letter d and e, respectively Logistic Regression and LDA.
+\hfill\break
+\hfill\break
+\hfill\break
+
+##Q.2] This problem involves predicting Salary from the Hitters data set which is part of the
+ISLR package.
+
+###a] Remove the observations for whom the salary information is unknown, and then log-transform the salaries.
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+library(ISLR)
+summary(Hitters)
+Hitters <- na.omit(Hitters)
+Hitters$Salary <- log(Hitters$Salary)
+```
+\hfill\break
+
+###b] Create a training set consisting of the first 200 observations, and a test set consisting of the remaining observations.
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+trainHitters <- 1:200
+Hitters.train <- Hitters[trainHitters, ]
+Hitters.test <- Hitters[-trainHitters, ]
+print("Training data head: ")
+print(head(Hitters.train))
+print("Test data head: ")
+print(head(Hitters.test))
+```
+\hfill\break
+
+###c] Perform boosting on the training set with 1000 trees for a range of values of the shrinkage parameter lambda. Produce a plot with different shrinkage values on the x-axis and the corresponding training set MSE on the y-axis.
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+library(gbm)
+set.seed(1)
+pows <- seq(-10, -0.2, by = 0.1)
+lambdas <- 10^pows
+train.err <- rep(NA, length(lambdas))
+for (i in 1:length(lambdas)) {
+    boost.hitters <- gbm(Salary ~ ., data = Hitters.train, distribution = "gaussian", n.trees = 1000, shrinkage = lambdas[i])
+    pred.train <- predict(boost.hitters, Hitters.train, n.trees = 1000)
+    train.err[i] <- mean((pred.train - Hitters.train$Salary)^2)
+}
+plot(lambdas, train.err, type = "b", xlab = "Shrinkage values", ylab = "Training MSE")
+```
+\hfill\break
+We observe, as shrinkage value increases the training MSE value exponentially decreases.
+\hfill\break
+
+###d] Produce a plot with different shrinkage values on the x-axis and the corresponding test set MSE on the y-axis.
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+set.seed(1)
+test.err <- rep(NA, length(lambdas))
+for (i in 1:length(lambdas)) {
+    boost.hitters <- gbm(Salary ~ ., data = Hitters.train, distribution = "gaussian", n.trees = 1000, shrinkage = lambdas[i])
+    yhat <- predict(boost.hitters, Hitters.test, n.trees = 1000)
+    test.err[i] <- mean((yhat - Hitters.test$Salary)^2)
+}
+plot(lambdas, test.err, type = "b", xlab = "Shrinkage values", ylab = "Test MSE")
+minMSEtest <- min(test.err)
+lambdaMinMSEtest <- lambdas[which.min(test.err)]
+print(paste("The minimum test MSE is ", minMSEtest, " , and is obtained for lambda =", lambdaMinMSEtest))
+```
+\hfill\break
+
+###e] Which variable appear to be the most important predictors in the boosted model?
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+library(gbm)
+boost.hitters <- gbm(Salary ~ ., data=Hitters.train, distribution = "gaussian", n.trees = 1000, shrinkage = lambdas[which.min(test.err)])
+```
+```{r echo=FALSE, message=FALSE, error=F, warning=F}
+summary(boost.hitters)
+```
+\hfill\break
+We see that CAtBat is most important variable in all the variables list, relatively. Also, relative influence of Walks is found to be highest.
+\hfill\break
+
+###f] Apply bagging to the training set. What is the test set MSE for this approach.
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+library(randomForest)
+set.seed(1)
+bag.hitters <- randomForest(Salary ~ ., data = Hitters.train, mtry = 19, ntree = 500)
+yhat.bag <- predict(bag.hitters, newdata = Hitters.test)
+MSEbag <- mean((yhat.bag - Hitters.test$Salary)^2)
+print(paste0("The test MSE for bagging is ", MSEbag  ,", which is slightly lower than the test MSE for boosting."))
+```
+\hfill\break
+
+###g] Apply random forests to the training set. What is the test set MSE for this approach.
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+library(randomForest)
+set.seed(1)
+rf.hitters <- randomForest(Salary ~ ., data = Hitters.train, ntree = 500)
+yhat.rf <- predict(rf.hitters, newdata = Hitters.test)
+MSErf <- mean((yhat.rf - Hitters.test$Salary)^2)
+print(paste0("The test MSE for Random Forest is ", MSErf  ,", which is slightly lower than the test MSE for boosting."))
+```
+\hfill\break
+
+##Q.3] Generate a simulated two-class data set with 100 observations and two features in which there is a visible but non-linear seperation between the classes. Show that in this setting, a support vector machine with a polynomial kernal (with degree greater than 1) or a radial kernal will outperform a support vector classifier on the training data. Which technique performs best on the test data? Make plots and report training and test error rates in order to back up your assertions.
+```{r echo=FALSE, message=FALSE, error=F, warning=F, out.width="60%"}
+library(e1071)
+set.seed(1)
+x <- rnorm(100)
+y <- 4 * x^2 + 1 + rnorm(100)
+class <- sample(100, 50)
+# print(y[class])
+y[class] <- y[class] + 3 # Adding 3 
+# print(y[class])
+y[-class] <- y[-class] - 3 # Subtracting 3 so that the non-linear seperation between the classes is visible
+plot(x[class], y[class], col = "red", xlab = "X", ylab = "Y", ylim = c(-6, 30))
+points(x[-class], y[-class], col = "blue")
+```
+\hfill\break
+We can clearly see the seperation between two classes - Non linear
+\hfill\break
+Now, we fit a support vector classifier on the training data
+```{r echo=FALSE, message=FALSE, error=F, warning=F, out.width="60%"}
+z <- rep(-1, 100)
+z[class] <- 1
+data <- data.frame(x = x, y = y, z = as.factor(z))
+train <- sample(100, 50)
+data.train <- data[train, ]
+data.test <- data[-train, ]
+svm.linear <- svm(z ~ ., data = data.train, kernel = "linear", cost = 10)
+plot(svm.linear, data.train)
+```
+
+```{r echo=FALSE, message=FALSE, error=F, warning=F}
+table(predict = predict(svm.linear, data.train), truth = data.train$z)
+```
+\hfill\break
+  The support vector classifier makes 6 errors on the training data. Next, we fit a support vector machine with a polynomial kernel.
+\hfill\break
+```{r echo=FALSE, message=FALSE, error=F, warning=F, out.width="60%"}
+svm.poly <- svm(z ~ ., data = data.train, kernel = "polynomial", cost = 10)
+plot(svm.poly, data.train)
+table(predict = predict(svm.poly, data.train), truth = data.train$z)
+```
+\hfill\break
+
+The support vector machine with a polynomial kernel of degree 3 makes 9 errors on the training data.
+
+Finally, we fit a support vector machine with a radial kernel and a gamma of 1.
+```{r echo=FALSE, message=FALSE, error=F, warning=F, out.width="60%"}
+svm.radial <- svm(z ~ ., data = data.train, kernel = "radial", gamma = 1, cost = 10)
+plot(svm.radial, data.train)
+table(predict = predict(svm.radial, data.train), truth = data.train$z)
+```
+\hfill\break
+The support vector machine with a radial kernel makes 0 error on the training data.
+
+Now, we check how these models fare when applied to the test data.
+```{r echo=FALSE, message=FALSE, error=F, warning=F, out.width="60%"}
+plot(svm.linear, data.test)
+table(predict = predict(svm.linear, data.test), truth = data.test$z)
+```
+
+```{r echo=FALSE, message=FALSE, error=F, warning=F, out.width="60%"}
+plot(svm.poly, data.test)
+table(predict = predict(svm.poly, data.test), truth = data.test$z)
+```
+
+```{r echo=FALSE, message=FALSE, error=F, warning=F, out.width="60%"}
+plot(svm.radial, data.test)
+table(predict = predict(svm.radial, data.test), truth = data.test$z)
+```
+\hfill\break
+We may see that the linear, polynomial and radial support vector machines classify respectively 9, 6 and 1 observations incorrectly. So, radial kernel is the best model in this setting.
+
+```{r}
+# Published assignment can be found at https://rpubs.com/SangamKotalwar/Assignment3_E
+```
+\newpage
+#Assignment F
+
+##Q.1] 
+
+###(a) Generate a simulated data set with 20 observations in each of three classes (i.e. 60 observations total), and 50 variables. (Be sure to add a mean shift to the observations in each class so that there are three distinct classes.)
+
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+set.seed(100)
+y <- rep(c(1,2,3),20 )
+x <- matrix(rnorm(60*50), ncol=50) # defaults to mean = 0 and sd = 1
+# Shift the classes all .9 unit apart
+x[y==2,]= x[y==2,] - .9
+x[y==3,]= x[y==3,] + .9
+par(mfrow=c(1,1))
+plot(x[,1:2], col =(4-y), pch=19)
+```
+\hfill\break
+
+###(b) Perform PCA on the 60 observations and plot the first two principal component score vectors. Use a different color to indicate the observations in each of the three classes. If the three classes appear separated in this plot, then continue on to part (c). If not, then return to part (a) and modify the simulation so that there is greater separation between the three classes. Do not continue to part (c) until the three classes show at least some separation in the first two principal component score vectors.
+
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+pr <- prcomp(x)
+plot(pr$x[, 1:2], col = 1:3, xlab = "First component", ylab = "Second component", pch = 19)
+```
+\hfill\break
+
+###(c) Perform K-means clustering of the observations with K = 3. How well do the clusters that you obtained in K-means cluster- ing compare to the true class labels?
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+kmeanop1 <- kmeans(x, 3, nstart = 20)
+table(kmeanop1$cluster,y,dnn= c("cluster","class"))
+```
+all the classes have been assigned to individual clusters.
+\hfill\break
+
+###(d) Perform K-means clustering with K = 2. Describe your results.
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+kmeanop2 <- kmeans(x,2,nstart = 20)
+table(kmeanop2$cluster,y,dnn=c("cluster","class"))
+```
+\hfill\break
+class 1 has been assigned to cluster 1 and 2, class 2 to cluster 1 and class 3 to cluster 2.
+\hfill\break
+
+###(e) Now perform K-means clustering with K = 4, and describe your results.
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+kmeanop3 <- kmeans(x,4,nstart = 20)
+table(kmeanop3$cluster,y,dnn=c("cluster","class"))
+```
+\hfill\break
+class 1 has been assigned to cluster 3, class 2 has been assigned to cluster 2 and 4, class 3 has been assigned to cluster 1. 
+\hfill\break
+
+###(f) Now perform K-means clustering with K = 3 on the first two principal component score vectors, rather than on the raw data. That is, perform K-means clustering on the 60 * 2 matrix of which the first column is the first principal component score vector, and the second column is the second principal component score vector. Comment on the results.
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+kmeansop4 <- kmeans(pr$x[,1:2],3, nstart =20)
+table(kmeansop4$cluster, y, dnn=c("cluster","class"))
+```
+\hfill\break
+every class has been assigned to each cluster individually, similar accuracy as in part (c).
+\hfill\break
+\hfill\break
+
+###(g) Using the scale() function, perform K-means clustering with K = 3 on the data after scaling each variable to have standard deviation one. How do these results compare to those obtained in (b)? Explain.
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+x_scaled <- scale(x, center = FALSE, scale = TRUE)
+kmeansop5 =kmeans(x_scaled, 3, nstart =20)
+table(kmeansop5$cluster, y, dnn=c("cluster","class"))
+```
+\hfill\break
+We have worse results than with unscaled data, as scaling affects the distance between the observations.
+\hfill\break
