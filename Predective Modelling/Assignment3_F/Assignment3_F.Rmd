@@ -1,0 +1,72 @@
+---
+title: "Assignment3_F"
+author: "Sangamesh"
+date: "19 December 2018"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+(a) Generate a simulated data set with 20 observations in each of three classes (i.e. 60 observations total), and 50 variables. (Be sure to add a mean shift to the observations in each class so that there are three distinct classes.)
+
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+set.seed(2)
+x <- matrix(rnorm(20 * 3 * 50, mean = 0, sd = 0.001), ncol = 50)
+x[1:20, 2] <- 1
+x[21:40, 1] <- 2
+x[21:40, 2] <- 2
+x[41:60, 1] <- 1
+true.labels <- c(rep(1, 20), rep(2, 20), rep(3, 20))
+```
+\hfill\break
+(b) Perform PCA on the 60 observations and plot the first two principal component score vectors. Use a different color to indicate the observations in each of the three classes. If the three classes appear separated in this plot, then continue on to part (c). If not, then return to part (a) and modify the simulation so that there is greater separation between the three classes. Do not continue to part (c) until the three classes show at least some separation in the first two principal component score vectors.
+
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+pr.out <- prcomp(x)
+plot(pr.out$x[, 1:2], col = 1:3, xlab = "Z1", ylab = "Z2", pch = 19)
+```
+\hfill\break
+(c) Perform K-means clustering of the observations with K = 3. How well do the clusters that you obtained in K-means cluster- ing compare to the true class labels?
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+km.out <- kmeans(x, 3, nstart = 20)
+table(true.labels, km.out$cluster)
+```
+\hfill\break
+(d) Perform K-means clustering with K = 2. Describe your results.
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+km.out <- kmeans(x, 2, nstart = 20)
+table(true.labels, km.out$cluster)
+```
+\hfill\break
+The observations are perfectly clustered.
+All observations of one of the three clusters is now absorbed in one of the two clusters.
+\hfill\break
+(e) Now perform K-means clustering with K = 4, and describe your results.
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+km.out <- kmeans(x, 4, nstart = 20)
+table(true.labels, km.out$cluster)
+```
+\hfill\break
+The first cluster is splitted into two clusters.
+\hfill\break
+(f) Now perform K-means clustering with K = 3 on the first two principal component score vectors, rather than on the raw data. That is, perform K-means clustering on the 60 * 2 matrix of which the first column is the first principal component score vector, and the second column is the second principal component score vector. Comment on the results.
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+km.out <- kmeans(pr.out$x[, 1:2], 3, nstart = 20)
+table(true.labels, km.out$cluster)
+```
+\hfill\break
+All observations are perfectly clustered once again.
+\hfill\break
+\hfill\break
+(g) Using the scale() function, perform K-means clustering with K = 3 on the data after scaling each variable to have standard deviation one. How do these results compare to those obtained in (b)? Explain.
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+km.out <- kmeans(scale(x), 3, nstart = 20)
+table(true.labels, km.out$cluster)
+```
+\hfill\break
+We have worse results than with unscaled data, as scaling affects the distance between the observations.
+\hfill\break
